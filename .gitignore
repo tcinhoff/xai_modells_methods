@@ -1,0 +1,6 @@
+# Ignoriere die poetry.lock-Datei
+poetry.lock
+
+# Ignoriere alle .pyc-Dateien
+*.pyc
+    

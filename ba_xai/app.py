@@ -6,6 +6,15 @@ import io
 from dash.exceptions import PreventUpdate
 from backend.models import LGBMModel, LinearRegressionModel
 import plotly.graph_objs as go
+from shap import TreeExplainer
+import shap
+import plotly.express as px
+
+# Globale Variablen für Modelle
+global_trained_model = None
+global_test_data = None
+global_prediction = None
+
 
 app = Dash(__name__)
 app.layout = html.Div(
@@ -77,7 +86,14 @@ app.layout = html.Div(
                     [
                         html.H3("Model Performance"),
                         html.Button("Train Model", id="train-model-button"),
-                        dcc.Graph(id="model-performance-graph"),
+                        dcc.Graph(
+                            id="model-performance-graph",
+                            config={"staticPlot": False},  # Ermöglicht Interaktion
+                            style={
+                                "width": "100%",
+                                "height": "400px",
+                            },  # Passen Sie den Stil nach Bedarf an
+                        ),
                         html.Div(id="train-model-output"),  # Output für Trainingsstatus
                     ],
                     style={"width": "40%", "display": "inline-block"},
@@ -92,6 +108,13 @@ app.layout = html.Div(
                             ],
                             value="SHAP",  # Default value
                             id="xai-method-dropdown",
+                        ),
+                        html.Div(id="shap-output", style={"marginTop": "20px"}),
+                        html.Div(
+                            [
+                                dcc.Graph(id="shap-plot"),
+                            ],
+                            style={"width": "100%", "display": "inline-block"},
                         ),
                     ],
                     style={"width": "40%", "display": "inline-block"},
@@ -159,8 +182,10 @@ def update_test_upload_component(contents, filename):
 
 
 @app.callback(
-    [Output("model-performance-graph", "figure"),
-     Output("train-model-output", "children")],
+    [
+        Output("model-performance-graph", "figure"),
+        Output("train-model-output", "children"),
+    ],
     [Input("train-model-button", "n_clicks")],
     [
         State("upload-training-data", "contents"),
@@ -169,6 +194,10 @@ def update_test_upload_component(contents, filename):
     ],
 )
 def update_graph(n_clicks, training_contents, test_contents, selected_model):
+    global global_trained_model
+    global global_test_data
+    global global_prediction
+
     if n_clicks is None:
         raise PreventUpdate
 
@@ -179,7 +208,6 @@ def update_graph(n_clicks, training_contents, test_contents, selected_model):
     # Datenverarbeitung
     train_df = parse_contents(training_contents)
     test_df = parse_contents(test_contents)
-    train_index = train_df.date
     test_index = test_df.date
     train_df = train_df.drop(columns=["date"])
     test_df = test_df.drop(columns=["date"])
@@ -197,6 +225,9 @@ def update_graph(n_clicks, training_contents, test_contents, selected_model):
         return html.Div("Unknown model selected.")
 
     predictions_df = pd.DataFrame({"date": test_index, "yhat": predictions})
+    global_trained_model = model
+    global_test_data = test_df
+    global_prediction = predictions_df
     predictions_plot = create_prediction_plot(predictions_df)
 
     return predictions_plot, html.Div("Model trained and predictions made.")
@@ -207,10 +238,71 @@ def parse_contents(contents):
     decoded = base64.b64decode(content_string)
     return pd.read_csv(io.StringIO(decoded.decode("utf-8")))
 
+
 def create_prediction_plot(predictions_df):
-    trace = go.Scatter(x=predictions_df['date'], y=predictions_df['yhat'], mode='lines', name='Predictions')
-    layout = go.Layout(title='Model Predictions', xaxis={'title': 'Date'}, yaxis={'title': 'Predicted Value'})
-    return {'data': [trace], 'layout': layout}
+    trace = go.Scatter(
+        x=predictions_df["date"],
+        y=predictions_df["yhat"],
+        mode="lines",
+        name="Predictions",
+    )
+    layout = go.Layout(
+        title="Model Predictions",
+        xaxis={"title": "Date"},
+        yaxis={"title": "Predicted Value"},
+    )
+    return {"data": [trace], "layout": layout}
+
+
+@app.callback(
+    Output("shap-output", "children"),
+    [Input("model-performance-graph", "clickData")],
+    [State("model-selection-radioitems", "value")],
+)
+def display_shap_analysis(clickData, selected_model):
+    if global_trained_model is None:
+        return "Train a model first."
+    
+    if clickData is None:
+        return "Click a point in the graph to analyze."
+
+
+    # Erhalten Sie den Index des ausgewählten Punktes
+    point_index = clickData["points"][0]["pointIndex"]
+
+    return f"Selected point: {global_prediction.iloc[point_index].date} with prediction {global_prediction.iloc[point_index].yhat}"
+
+@app.callback(
+    Output('shap-plot', 'figure'),
+    [Input('model-performance-graph', 'clickData')],
+    [State('model-selection-radioitems', 'value')]
+)
+def display_shap_plot(clickData, selected_model):
+    if clickData is None or global_trained_model is None:
+        return go.Figure()
+
+    point_index = clickData['points'][0]['pointIndex']
+
+    if selected_model == "LGBM":
+        shap_fig = create_shap_plot(global_trained_model, global_test_data, point_index)
+        return shap_fig
+    else:
+        return go.Figure()
+
+
+def create_shap_plot(model, test_data, point_index):
+    # Explainer erstellen
+    explainer = shap.Explainer(model.model)
+    shap_values = explainer.shap_values(test_data)
+
+    # SHAP-Werte für den ausgewählten Punkt
+    selected_shap_values = shap_values[point_index]
+
+    # SHAP-Plot erstellen
+    fig = px.bar(x=test_data.columns, y=selected_shap_values, labels={'x': 'Feature', 'y': 'SHAP Value'})
+    fig.update_layout(title_text='SHAP Values for Selected Prediction', title_x=0.5)
+    
+    return fig
 
 if __name__ == "__main__":
     app.run_server(debug=True)

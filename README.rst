@@ -9,6 +9,8 @@ Ich möchte das LGBM mit den Daten trainieren können
 Ich möchte mit den Testdaten vorhersagen
 Ich möchte die Vorhersagen anzeigen.
 
+Soweit alles geschafft :D
+
 
 
 weiteres:
