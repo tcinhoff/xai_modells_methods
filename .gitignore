@@ -3,3 +3,4 @@ poetry.lock
 
 # Ignoriere alle .pyc-Dateien
 *.pyc
+    
