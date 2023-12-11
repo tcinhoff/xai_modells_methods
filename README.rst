@@ -1,24 +1,17 @@
 Also was steht an?
 Diese Woche:
-Ich möchte eine funktionierende Oberfläche haben
-Ich möchte Daten hochladen können.
-Wenn ich eine Datei ausgewählt habe möchte ich dass sich das Uploadfeld in den Namen der Datei verändert
-Die Daten sollen auf csv dateien überpfüft werden und sonst abgelehnt werden
-Die Daten sollen an das Backend weitergeleitet werden
-Ich möchte das LGBM mit den Daten trainieren können
-Ich möchte mit den Testdaten vorhersagen
-Ich möchte die Vorhersagen anzeigen.
-
-Soweit alles geschafft :D
+Integration von neuen Modellen (LR, XGB, GAM)
+Integration von neuen Methoden (SHAP, LIME)
+Integration von Configs
+Schönes anzeigen von Methoden
 
 
-
-weiteres:
-Ich möchte die Möglichkeit haben, die Parameter des LGBM zu verändern
+Nächste Woche:
+Refactoring und schönes UI
 
 
 Zum Schreiben:
-Es ist kein Problem wenn da nichts passiert diese Woche
+Inhaltsverzeichnis entsprechend anpassen
 
 mögliche ToDo:
 
