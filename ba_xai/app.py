@@ -4,11 +4,14 @@ import base64
 import pandas as pd
 import io
 from dash.exceptions import PreventUpdate
-from backend.models import LGBMModel, LinearRegressionModel
+from backend.models import LGBMModel, LinearRegressionModel, XGBoostModel, SklearnGAM
 import plotly.graph_objs as go
-from shap import TreeExplainer
 import shap
 import plotly.express as px
+from sklearn.inspection import partial_dependence
+import lime
+import lime.lime_tabular
+
 
 # Globale Variablen für Modelle
 global_trained_model = None
@@ -68,10 +71,12 @@ app.layout = html.Div(
                         html.H3("Model Selection"),
                         dcc.RadioItems(
                             options=[
-                                {"label": "LGBM", "value": "LGBM"},
                                 {"label": "Linear Regression", "value": "LR"},
+                                {"label": "GAM", "value": "GAM"},
+                                {"label": "LGBM", "value": "LGBM"},
+                                {"label": "XGBoost", "value": "XGBoost"},
                             ],
-                            value="LGBM",  # Default value
+                            value="LR",  # Default value
                             id="model-selection-radioitems",
                         ),
                         html.Button(
@@ -103,12 +108,23 @@ app.layout = html.Div(
                         html.H3("XAI Method Selection"),
                         dcc.Dropdown(
                             options=[
-                                {"label": "SHAP", "value": "SHAP"},
+                                {
+                                    "label": "Modellkoeffizienten",
+                                    "value": "Coefficients",
+                                },
+                                {"label": "Partial Dependence Plots", "value": "PDP"},
                                 {"label": "LIME", "value": "LIME"},
+                                {"label": "SHAP", "value": "SHAP"},
                             ],
-                            value="SHAP",  # Default value
+                            value="Coefficients",  # Standardwert
                             id="xai-method-dropdown",
                         ),
+                        dcc.Dropdown(
+                            id="pdp-feature-dropdown",
+                            options=[],  # Keine anfänglichen Optionen
+                            value=None,  # Kein anfänglicher Wert
+                        ),
+                        html.Div(id="xai-output"),
                         html.Div(id="shap-output", style={"marginTop": "20px"}),
                         html.Div(
                             [
@@ -130,7 +146,7 @@ app.layout = html.Div(
     Output("upload-config-btn", "style"), [Input("model-selection-radioitems", "value")]
 )
 def show_upload_config_button(selected_model):
-    if selected_model == "LGBM":
+    if selected_model in ["LGBM", "XGBoost", "GAM"]:
         return {"display": "inline-block"}
     return {"display": "none"}
 
@@ -185,6 +201,7 @@ def update_test_upload_component(contents, filename):
     [
         Output("model-performance-graph", "figure"),
         Output("train-model-output", "children"),
+        Output('pdp-feature-dropdown', 'options')  # Neuer Output für das Dropdown-Menü
     ],
     [Input("train-model-button", "n_clicks")],
     [
@@ -214,13 +231,21 @@ def update_graph(n_clicks, training_contents, test_contents, selected_model):
 
     # Modellauswahl und Training
     if selected_model == "LGBM":
-        model = LGBMModel(train_df, test_df)
+        model = LGBMModel(train_df)
         model.fit()
-        predictions = model.predict()
+        predictions = model.predict(test_df)
     elif selected_model == "LR":
-        model = LinearRegressionModel(train_df, test_df)
+        model = LinearRegressionModel(train_df)
         model.fit()
-        predictions = model.predict()
+        predictions = model.predict(test_df)
+    elif selected_model == "XGBoost":
+        model = XGBoostModel(train_df)
+        model.fit()
+        predictions = model.predict(test_df)
+    elif selected_model == "GAM":
+        model = SklearnGAM(train_df)
+        model.fit()
+        predictions = model.predict(test_df)
     else:
         return html.Div("Unknown model selected.")
 
@@ -230,7 +255,10 @@ def update_graph(n_clicks, training_contents, test_contents, selected_model):
     global_prediction = predictions_df
     predictions_plot = create_prediction_plot(predictions_df)
 
-    return predictions_plot, html.Div("Model trained and predictions made.")
+    pdp_dropdown_options = [{'label': feature, 'value': feature} for feature in global_test_data.columns] if global_test_data is not None else []
+
+    return predictions_plot, html.Div("Model trained and predictions made."), pdp_dropdown_options
+
 
 
 def parse_contents(contents):
@@ -255,6 +283,59 @@ def create_prediction_plot(predictions_df):
 
 
 @app.callback(
+    Output("xai-output", "children"),
+    [
+        Input("xai-method-dropdown", "value"),
+        Input("model-performance-graph", "clickData"),
+        Input("pdp-feature-dropdown", "value"),
+        State("model-selection-radioitems", "value"),
+    ],
+)
+def display_model_evaluation(xai_method, clickData, pdp_feature, selected_model):
+    if global_trained_model is None or global_test_data is None:
+        return "Train a model first and ensure data is loaded."
+
+    point_index = 0 if clickData is None else clickData["points"][0]["pointIndex"]
+
+    if xai_method == "Coefficients" and isinstance(
+        global_trained_model, LinearRegressionModel
+    ):
+        coef_fig = create_coefficients_plot(global_trained_model.model)
+        return dcc.Graph(figure=coef_fig)
+
+    elif xai_method == "PDP":
+        pdp_fig = create_pdp_plot(
+            global_trained_model.model, pdp_feature, global_test_data
+        )
+        return dcc.Graph(figure=pdp_fig)
+
+    elif xai_method == "SHAP":
+        if selected_model in ["LGBM", "XGBoost", "LR", "GAM"]:
+            shap_fig = create_shap_plot(
+                global_trained_model, global_test_data, point_index, selected_model
+            )
+            return dcc.Graph(figure=shap_fig)
+        else:
+            return "SHAP analysis is not available for this model."
+
+    elif xai_method == "LIME":
+        lime_html = perform_lime_analysis(
+            global_trained_model, global_test_data, point_index
+        )
+        return html.Iframe(srcDoc=lime_html, style={"width": "100%", "height": "400px"})
+
+    return "Select an appropriate XAI method."
+
+
+def perform_lime_analysis(model, data, point_index):
+    explainer = lime.lime_tabular.LimeTabularExplainer(
+        training_data=data.to_numpy(), feature_names=data.columns, mode="regression"
+    )
+    lime_exp = explainer.explain_instance(data.iloc[point_index], model.predict)
+    return lime_exp.as_html()
+
+
+@app.callback(
     Output("shap-output", "children"),
     [Input("model-performance-graph", "clickData")],
     [State("model-selection-radioitems", "value")],
@@ -262,47 +343,86 @@ def create_prediction_plot(predictions_df):
 def display_shap_analysis(clickData, selected_model):
     if global_trained_model is None:
         return "Train a model first."
-    
+
     if clickData is None:
         return "Click a point in the graph to analyze."
-
 
     # Erhalten Sie den Index des ausgewählten Punktes
     point_index = clickData["points"][0]["pointIndex"]
 
-    return f"Selected point: {global_prediction.iloc[point_index].date} with prediction {global_prediction.iloc[point_index].yhat}"
+    return f"Selected point: {global_prediction.iloc[point_index].date} with prediction {round(global_prediction.iloc[point_index].yhat, 1)}"
+
 
 @app.callback(
-    Output('shap-plot', 'figure'),
-    [Input('model-performance-graph', 'clickData')],
-    [State('model-selection-radioitems', 'value')]
+    Output("shap-plot", "figure"),
+    [Input("model-performance-graph", "clickData")],
+    [State("model-selection-radioitems", "value")],
 )
 def display_shap_plot(clickData, selected_model):
     if clickData is None or global_trained_model is None:
         return go.Figure()
 
-    point_index = clickData['points'][0]['pointIndex']
+    point_index = clickData["points"][0]["pointIndex"]
 
-    if selected_model == "LGBM":
-        shap_fig = create_shap_plot(global_trained_model, global_test_data, point_index)
-        return shap_fig
+    shap_fig = create_shap_plot(
+        global_trained_model, global_test_data, point_index, selected_model
+    )
+    return shap_fig
+
+
+def create_shap_plot(model, test_data, point_index, model_type):
+    # Wählen Sie den richtigen Explainer basierend auf dem Modelltyp
+    if model_type in ["LGBM", "XGBoost"]:
+        explainer = shap.TreeExplainer(model.model)
+    elif model_type == ["GAM", "LR"]:
+        explainer = shap.Explainer(model.model, test_data)
     else:
-        return go.Figure()
+        return go.Figure()  # Für unbekannte Modelle keine SHAP-Plot
 
-
-def create_shap_plot(model, test_data, point_index):
-    # Explainer erstellen
-    explainer = shap.Explainer(model.model)
     shap_values = explainer.shap_values(test_data)
 
-    # SHAP-Werte für den ausgewählten Punkt
+    # Verwenden Sie SHAP-Werte für den ausgewählten Punkt
     selected_shap_values = shap_values[point_index]
 
     # SHAP-Plot erstellen
-    fig = px.bar(x=test_data.columns, y=selected_shap_values, labels={'x': 'Feature', 'y': 'SHAP Value'})
-    fig.update_layout(title_text='SHAP Values for Selected Prediction', title_x=0.5)
-    
+    fig = px.bar(
+        x=test_data.columns,
+        y=selected_shap_values,
+        labels={"x": "Feature", "y": "SHAP Value"},
+    )
+    fig.update_layout(title_text="SHAP Values for Selected Prediction", title_x=0.5)
+
     return fig
+
+
+def create_pdp_plot(model, feature, data):
+    pdp_results = partial_dependence(model, data, [feature])
+    feature_values = pdp_results["values"][0]
+    pdp_values = pdp_results["average"][0]
+
+    trace = go.Scatter(x=feature_values, y=pdp_values, mode="lines", name="PDP")
+    layout = go.Layout(
+        title=f"Partial Dependence Plot for {feature}",
+        xaxis={"title": feature},
+        yaxis={"title": "Partial Dependence"},
+    )
+    return {"data": [trace], "layout": layout}
+
+
+def create_coefficients_plot(model):
+    if not hasattr(model, "coef_"):
+        return go.Figure()
+
+    coefficients = model.coef_
+    features = global_test_data.columns
+
+    fig = px.bar(
+        x=features, y=coefficients, labels={"x": "Feature", "y": "Coefficient"}
+    )
+    fig.update_layout(title_text="Model Coefficients", title_x=0.5)
+
+    return fig
+
 
 if __name__ == "__main__":
     app.run_server(debug=True)
