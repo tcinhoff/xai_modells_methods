@@ -13,8 +13,10 @@ Refactoring und schönes UI
 Zum Schreiben:
 Inhaltsverzeichnis entsprechend anpassen
 
-mögliche ToDo:
-
+Was funktioniert aktuell noch nicht?
+- Die Configs sind noch nicht integriert
+LIME und SHAP funktionieren für LR und GAM nicht
+LIME hat im allgemeinen noch starke Probleme, es wird nichts angezeigt und alte Graphen bleiben bestehen
 
 Wichtige Code segmente:
 lgb.LGBMRegressor(
