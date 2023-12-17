@@ -1,11 +1,10 @@
+import xgboost as xgb
 from .base_model import BaseModel
-from sklearn.linear_model import LinearRegression
 
-
-class LinearRegressionModel(BaseModel):
+class XGBoostModel(BaseModel):
     def __init__(self, train, target_col="yhat"):
         super().__init__(train, target_col)
-        self.model = LinearRegression()
+        self.model = xgb.XGBRegressor()
 
     def fit(self):
         self.model.fit(self.X, self.y)
