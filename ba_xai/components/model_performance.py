@@ -30,50 +30,42 @@ def get_model_performance():
     [
         Output("model-performance-graph", "figure"),
         Output("train-model-output", "children"),
-        Output("hidden-div-for-processed-test-data", "children"),
-        Output("hidden-div-for-prediction", "children"),
     ],
     [Input("train-model-button", "n_clicks")],
-    [
-        State("hidden-div-for-train-data", "children"),
-        State("hidden-div-for-test-data", "children"),
-        State("model-selection-radioitems", "value"),
-    ],
+    [State("model-selection-radioitems", "value")],
 )
-def update_graph(n_clicks, train_data_json, test_data_json, selected_model):
+def update_graph(n_clicks, selected_model):
     if n_clicks is None:
         raise PreventUpdate
 
-    # Überprüfen, ob sowohl Trainings- als auch Testdaten vorhanden sind
-    if not train_data_json or not test_data_json:
-        return go.Figure(), html.Div("Please upload data."), None, None
+    train_data = pd.read_csv(PATHS["train_data_path"])
+    test_data = pd.read_csv(PATHS["test_data_path"])
 
-    # Datenverarbeitung
-    train_df = pd.read_json(io.StringIO(train_data_json), orient="split")
-    test_df = pd.read_json(io.StringIO(test_data_json), orient="split")
-    test_index = test_df.date
-    train_df = train_df.drop(columns=["date"])
-    test_df = test_df.drop(columns=["date"])
+    # Überprüfen, ob sowohl Trainings- als auch Testdaten vorhanden sind
+    if train_data.empty or test_data.empty:
+        return go.Figure(), "Please upload data."
+
+    test_index = test_data.date
+    train_data = train_data.drop(columns=["date"])
+    test_data = test_data.drop(columns=["date"])
 
     if selected_model in MODELS:
         model_class = MODELS[selected_model]["class"]
-        model, predictions = get_model_prediction(model_class(train_df), test_df)
+        model, predictions = get_model_prediction(model_class(train_data), test_data)
     else:
-        return go.Figure(), "Please select a model.", None, None
+        return go.Figure(), "Please select a model."
 
     predictions_df = pd.DataFrame({"date": test_index, "yhat": predictions})
+    predictions_plot = create_prediction_plot(predictions_df)
 
+    # Speichern des trainierten Modells und der Vorhersagen
     with open(PATHS["model_path"], "wb") as f:
         pickle.dump(model, f)
 
-    predictions_plot = create_prediction_plot(predictions_df)
+    predictions_df.to_csv(PATHS["prediction_path"], index=False)
+    test_data.to_csv(PATHS["processed_test_data_path"], index=False)
 
-    return (
-        predictions_plot,
-        None,
-        test_df.to_json(date_format="iso", orient="split"),
-        predictions_df.to_json(date_format="iso", orient="split"),
-    )
+    return predictions_plot, None
 
 
 def create_prediction_plot(predictions_df):

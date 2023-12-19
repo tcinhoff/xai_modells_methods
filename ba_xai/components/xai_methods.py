@@ -38,36 +38,27 @@ def get_xai_methods():
     [
         Input("xai-method-dropdown", "value"),
         Input("model-performance-graph", "clickData"),
-        Input("hidden-div-for-prediction", "children"),
     ],
-    [
-        State("model-selection-radioitems", "value"),
-        State("hidden-div-for-processed-test-data", "children"),
-        State("hidden-div-for-train-data", "children"),
-    ],
+    [State("model-selection-radioitems", "value")],
 )
-def display_model_evaluation(
-    xai_method, clickData, _, selected_model, test_data_json, train_data_json
-):
+def display_model_evaluation(xai_method, clickData, selected_model):
     pickled_model = open(PATHS["model_path"], "rb").read()
     model = pickle.loads(pickled_model)
-    if model is None or test_data_json is None:
-        return "Train a model first and ensure data is loaded."
+    if model is None:
+        return "Train a model first."
 
     point_index = 0 if clickData is None else clickData["points"][0]["pointIndex"]
-    test_data = pd.read_json(io.StringIO(test_data_json), orient="split")
-    train_data = pd.read_json(io.StringIO(train_data_json), orient="split")
-    train_data = train_data.drop(columns=["date"])
 
+    test_data = pd.read_csv(PATHS["processed_test_data_path"])
+    train_data = pd.read_csv(PATHS["train_data_path"])
+
+    # Anpassung der Aufrufe entsprechend der XAI-Methode
     if xai_method == "Coefficients" and isinstance(model, LinearRegressionModel):
         return get_coefficents_component(test_data.columns)
-
     elif xai_method == "PDP":
         return get_pdp_component(test_data)
-
     elif xai_method == "SHAP":
         return get_shap_component(selected_model, point_index, test_data)
-
     elif xai_method == "LIME":
         return get_lime_component(point_index, train_data, test_data)
 
@@ -80,11 +71,11 @@ def display_model_evaluation(
         Input("model-performance-graph", "clickData"),
         Input("xai-method-dropdown", "value"),
     ],
-    State("hidden-div-for-prediction", "children"),
 )
-def display_selected_point(clickData, selected_method, prediction_json):
+def display_selected_point(clickData, selected_method):
     if selected_method in ["Coefficients", "PDP"]:
         return None
+
     pickled_model = open(PATHS["model_path"], "rb").read()
     model = pickle.loads(pickled_model)
     if model is None:
@@ -93,6 +84,7 @@ def display_selected_point(clickData, selected_method, prediction_json):
     if clickData is None:
         return "Click a point in the graph to analyze."
 
+    prediction = pd.read_csv(PATHS["prediction_path"])
     point_index = clickData["points"][0]["pointIndex"]
-    prediction = pd.read_json(io.StringIO(prediction_json), orient="split")
+
     return f"Selected point: {prediction.iloc[point_index].date} with prediction {round(prediction.iloc[point_index].yhat, 1)}"

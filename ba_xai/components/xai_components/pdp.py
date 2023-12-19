@@ -25,14 +25,15 @@ def get_pdp_component(test_data):
 @app.callback(
     Output("pdp-graph", "figure"),
     [Input("pdp-feature-dropdown", "value")],
-    [State("hidden-div-for-processed-test-data", "children")],
 )
-def update_pdp_plot(selected_feature, test_data_json):
+def update_pdp_plot(selected_feature):
     pickled_model = open(PATHS["model_path"], "rb").read()
     model = pickle.loads(pickled_model).model
-    if selected_feature is None or test_data_json is None or model is None:
+    test_data = pd.read_csv(PATHS["processed_test_data_path"])
+
+    if selected_feature is None or test_data is None or model is None:
         raise PreventUpdate
-    test_data = pd.read_json(io.StringIO(test_data_json), orient="split")
+    
     return create_pdp_plot(model, selected_feature, test_data)
 
 

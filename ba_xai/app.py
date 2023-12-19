@@ -19,18 +19,6 @@ app.layout = html.Div(
             ],
             style={"display": "flex"},
         ),
-        # Verborgene Divs für die Speicherung von Daten
-        html.Div(id="hidden-div-for-train-data", style={"display": "none"}),
-        html.Div(id="hidden-div-for-test-data", style={"display": "none"}),
-        html.Div(id="hidden-div-for-processed-test-data", style={"display": "none"}),
-        html.Div(id="hidden-div-for-prediction", style={"display": "none"}),
-        # Statt hidden divs können auch dcc.Store Komponenten verwendet werden
-        dcc.Store(id="store-train-data-path"),
-        dcc.Store(id="store-test-data-path"),
-        dcc.Store(id="store-processed-test-data-path"),
-        dcc.Store(id="store-prediction-path"),
-        dcc.Store(id="store-trained-model-path"),
-
     ]
 )
 
