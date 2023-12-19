@@ -3,11 +3,11 @@ from dash.dependencies import Input, Output, State
 import plotly.graph_objs as go
 import pandas as pd
 from dash.exceptions import PreventUpdate
-from backend.models import LGBMModel, LinearRegressionModel, XGBoostModel, SklearnGAM
 import base64
 import io
-from app_instance import app, model_path
+from app_instance import app, PATHS
 import pickle
+from backend.models.models_config import MODELS
 
 
 def get_model_performance():
@@ -49,29 +49,21 @@ def update_graph(n_clicks, train_data_json, test_data_json, selected_model):
         return go.Figure(), html.Div("Please upload data."), None, None
 
     # Datenverarbeitung
-    train_df = pd.read_json(io.StringIO(train_data_json), orient='split')
-    test_df = pd.read_json(io.StringIO(test_data_json), orient='split')
+    train_df = pd.read_json(io.StringIO(train_data_json), orient="split")
+    test_df = pd.read_json(io.StringIO(test_data_json), orient="split")
     test_index = test_df.date
     train_df = train_df.drop(columns=["date"])
     test_df = test_df.drop(columns=["date"])
 
-    # Modellauswahl und Training
-    if selected_model == "LGBM":
-        model, predictions = get_model_prediction(LGBMModel(train_df), test_df)
-    elif selected_model == "LR":
-        model, predictions = get_model_prediction(
-            LinearRegressionModel(train_df), test_df
-        )
-    elif selected_model == "XGBoost":
-        model, predictions = get_model_prediction(XGBoostModel(train_df), test_df)
-    elif selected_model == "GAM":
-        model, predictions = get_model_prediction(SklearnGAM(train_df), test_df)
+    if selected_model in MODELS:
+        model_class = MODELS[selected_model]["class"]
+        model, predictions = get_model_prediction(model_class(train_df), test_df)
     else:
-        return go.Figure(), html.Div("Please select a model."), None, None
+        return go.Figure(), "Please select a model.", None, None
 
     predictions_df = pd.DataFrame({"date": test_index, "yhat": predictions})
 
-    with open(model_path, "wb") as f:
+    with open(PATHS["model_path"], "wb") as f:
         pickle.dump(model, f)
 
     predictions_plot = create_prediction_plot(predictions_df)

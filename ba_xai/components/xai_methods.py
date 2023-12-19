@@ -3,28 +3,26 @@ from dash.dependencies import Input, Output, State
 import pandas as pd
 from backend.models import LinearRegressionModel
 import io
-from app_instance import app, model_path
+from app_instance import app, PATHS
 from .xai_components.coefficients import get_coefficents_component
 from .xai_components.pdp import get_pdp_component
 from .xai_components.shap import get_shap_component
 from .xai_components.lime import get_lime_component
 import pickle
+from .xai_components.xai_methods_config import XAI_METHODS
 
 
 def get_xai_methods():
+    options = [
+        {"label": method_info["label"], "value": method}
+        for method, method_info in XAI_METHODS.items()
+    ]
+
     return html.Div(
         [
             html.H3("XAI Method Selection"),
             dcc.Dropdown(
-                options=[
-                    {
-                        "label": "Modellkoeffizienten",
-                        "value": "Coefficients",
-                    },
-                    {"label": "Partial Dependence Plots", "value": "PDP"},
-                    {"label": "LIME", "value": "LIME"},
-                    {"label": "SHAP", "value": "SHAP"},
-                ],
+                options=options,
                 value="Coefficients",  # Standardwert
                 id="xai-method-dropdown",
             ),
@@ -45,11 +43,13 @@ def get_xai_methods():
     [
         State("model-selection-radioitems", "value"),
         State("hidden-div-for-processed-test-data", "children"),
-        State("hidden-div-for-train-data", "children")
+        State("hidden-div-for-train-data", "children"),
     ],
 )
-def display_model_evaluation(xai_method, clickData, _, selected_model, test_data_json, train_data_json):
-    pickled_model = open(model_path, "rb").read()
+def display_model_evaluation(
+    xai_method, clickData, _, selected_model, test_data_json, train_data_json
+):
+    pickled_model = open(PATHS["model_path"], "rb").read()
     model = pickle.loads(pickled_model)
     if model is None or test_data_json is None:
         return "Train a model first and ensure data is loaded."
@@ -85,7 +85,7 @@ def display_model_evaluation(xai_method, clickData, _, selected_model, test_data
 def display_selected_point(clickData, selected_method, prediction_json):
     if selected_method in ["Coefficients", "PDP"]:
         return None
-    pickled_model = open(model_path, "rb").read()
+    pickled_model = open(PATHS["model_path"], "rb").read()
     model = pickle.loads(pickled_model)
     if model is None:
         return "Train a model first."

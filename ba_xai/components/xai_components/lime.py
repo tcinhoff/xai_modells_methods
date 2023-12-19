@@ -1,6 +1,6 @@
 import lime
 from dash import html
-from app_instance import model_path
+from app_instance import PATHS
 import pickle
 
 def get_lime_component(point_index, train_data, test_data):
@@ -12,7 +12,7 @@ def get_lime_component(point_index, train_data, test_data):
 
 def perform_lime_analysis(train_data, test_data, point_index):
     print(point_index)
-    pickled_model = open(model_path, "rb").read()
+    pickled_model = open(PATHS.model_path, "rb").read()
     model = pickle.loads(pickled_model).model
     explainer = lime.lime_tabular.LimeTabularExplainer(
         training_data=train_data.to_numpy(), feature_names=train_data.columns, mode="regression"

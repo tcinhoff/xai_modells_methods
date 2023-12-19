@@ -1,20 +1,21 @@
 from dash import dcc, html
 from dash.dependencies import Input, Output
 from app_instance import app
+from backend.models.models_config import MODELS
 
 
 def get_model_selection():
+    options = [
+        {"label": model_info["label"], "value": model}
+        for model, model_info in MODELS.items()
+    ]
+
     return html.Div(
         [
             html.H3("Model Selection"),
             dcc.RadioItems(
-                options=[
-                    {"label": "Linear Regression", "value": "LR"},
-                    {"label": "GAM", "value": "GAM"},
-                    {"label": "LGBM", "value": "LGBM"},
-                    {"label": "XGBoost", "value": "XGBoost"},
-                ],
-                value="LR",  # Default value
+                options=options,
+                value="LR",  
                 id="model-selection-radioitems",
             ),
             html.Button(
@@ -31,6 +32,6 @@ def get_model_selection():
     Output("upload-config-btn", "style"), [Input("model-selection-radioitems", "value")]
 )
 def show_upload_config_button(selected_model):
-    if selected_model in ["LGBM", "XGBoost", "GAM"]:
+    if MODELS[selected_model]["config_upload"]:
         return {"display": "inline-block"}
     return {"display": "none"}

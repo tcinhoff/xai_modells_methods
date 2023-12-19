@@ -1,7 +1,7 @@
 from dash import dcc, html
 import plotly.graph_objs as go
 from sklearn.inspection import partial_dependence
-from app_instance import app, model_path
+from app_instance import app, PATHS
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 import pandas as pd
@@ -28,7 +28,7 @@ def get_pdp_component(test_data):
     [State("hidden-div-for-processed-test-data", "children")],
 )
 def update_pdp_plot(selected_feature, test_data_json):
-    pickled_model = open(model_path, "rb").read()
+    pickled_model = open(PATHS["model_path"], "rb").read()
     model = pickle.loads(pickled_model).model
     if selected_feature is None or test_data_json is None or model is None:
         raise PreventUpdate

@@ -2,12 +2,13 @@ from dash import dcc
 import plotly.graph_objs as go
 import plotly.express as px
 import shap
-from app_instance import model_path
+from app_instance import PATHS
 import pickle
+from backend.models.models_config import MODELS
 
 
 def get_shap_component(selected_model, point_index, test_data):
-    if selected_model in ["LGBM", "XGBoost", "LR", "GAM"]:
+    if "SHAP" in MODELS[selected_model]["compatible_methods"]:
         shap_fig = create_shap_plot(
             test_data, point_index, selected_model
         )
@@ -18,7 +19,7 @@ def get_shap_component(selected_model, point_index, test_data):
 
 
 def create_shap_plot(test_data, point_index, model_type):
-    pickled_model = open(model_path, "rb").read()
+    pickled_model = open(PATHS["model_path"], "rb").read()
     model = pickle.loads(pickled_model).model
     # Wählen Sie den richtigen Explainer basierend auf dem Modelltyp
     if model_type in ["LGBM", "XGBoost"]:
