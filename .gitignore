@@ -3,4 +3,6 @@ poetry.lock
 
 # Ignoriere alle .pyc-Dateien
 *.pyc
-    
+
+# Ignoriere alle .Dateien im temp-Ordner
+ba_xai/temp/*

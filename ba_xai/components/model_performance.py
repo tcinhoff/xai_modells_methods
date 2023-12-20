@@ -3,22 +3,23 @@ from dash.dependencies import Input, Output, State
 import plotly.graph_objs as go
 import pandas as pd
 from dash.exceptions import PreventUpdate
-from backend.models import LGBMModel, LinearRegressionModel, XGBoostModel, SklearnGAM
 import base64
 import io
-from app_instance import app, model_path
+from app_instance import app, PATHS
 import pickle
+from backend.models.models_config import MODELS
+import dash_bootstrap_components as dbc
 
 
 def get_model_performance():
     return html.Div(
         [
             html.H3("Model Performance"),
-            html.Button("Train Model", id="train-model-button"),
+            dbc.Button("Train Model", id="train-model-button", size="sm"),
             dcc.Graph(
                 id="model-performance-graph",
                 config={"staticPlot": False},
-                style={"width": "100%", "height": "400px"},
+                style={"width": "95%", "height": "400px"},
             ),
             html.Div(id="train-model-output"),
         ],
@@ -30,58 +31,45 @@ def get_model_performance():
     [
         Output("model-performance-graph", "figure"),
         Output("train-model-output", "children"),
-        Output("hidden-div-for-processed-test-data", "children"),
-        Output("hidden-div-for-prediction", "children"),
     ],
     [Input("train-model-button", "n_clicks")],
-    [
-        State("hidden-div-for-train-data", "children"),
-        State("hidden-div-for-test-data", "children"),
-        State("model-selection-radioitems", "value"),
-    ],
+    [State("model-selection-radioitems", "value")],
 )
-def update_graph(n_clicks, train_data_json, test_data_json, selected_model):
+def update_graph(n_clicks, selected_model):
     if n_clicks is None:
         raise PreventUpdate
 
+    train_data = pd.read_csv(PATHS["train_data_path"])
+    test_data = pd.read_csv(PATHS["test_data_path"])
+
     # Überprüfen, ob sowohl Trainings- als auch Testdaten vorhanden sind
-    if not train_data_json or not test_data_json:
-        return go.Figure(), html.Div("Please upload data."), None, None
+    if train_data.empty or test_data.empty:
+        return go.Figure(), "Please upload data."
 
-    # Datenverarbeitung
-    train_df = pd.read_json(io.StringIO(train_data_json), orient='split')
-    test_df = pd.read_json(io.StringIO(test_data_json), orient='split')
-    test_index = test_df.date
-    train_df = train_df.drop(columns=["date"])
-    test_df = test_df.drop(columns=["date"])
+    test_index = test_data.date
+    train_data = train_data.drop(columns=["date"])
+    test_data = test_data.drop(columns=["date"])
+    target_col = list(set(train_data.columns) - set(test_data.columns))[0]
 
-    # Modellauswahl und Training
-    if selected_model == "LGBM":
-        model, predictions = get_model_prediction(LGBMModel(train_df), test_df)
-    elif selected_model == "LR":
-        model, predictions = get_model_prediction(
-            LinearRegressionModel(train_df), test_df
-        )
-    elif selected_model == "XGBoost":
-        model, predictions = get_model_prediction(XGBoostModel(train_df), test_df)
-    elif selected_model == "GAM":
-        model, predictions = get_model_prediction(SklearnGAM(train_df), test_df)
+    if selected_model in MODELS:
+        model_class = MODELS[selected_model]["class"]
+        model, predictions = get_model_prediction(model_class(train_data, target_col), test_data)
     else:
-        return go.Figure(), html.Div("Please select a model."), None, None
+        return go.Figure(), "Please select a model."
 
     predictions_df = pd.DataFrame({"date": test_index, "yhat": predictions})
-
-    with open(model_path, "wb") as f:
-        pickle.dump(model, f)
-
     predictions_plot = create_prediction_plot(predictions_df)
 
-    return (
-        predictions_plot,
-        None,
-        test_df.to_json(date_format="iso", orient="split"),
-        predictions_df.to_json(date_format="iso", orient="split"),
-    )
+    # Speichern des trainierten Modells und der Vorhersagen
+    with open(PATHS["model_path"], "wb") as f:
+        pickle.dump(model, f)
+
+    predictions_df.to_csv(PATHS["prediction_path"], index=False)
+    test_data.to_csv(PATHS["processed_test_data_path"], index=False)
+    train_data = train_data.drop(columns=["yhat"])
+    train_data.to_csv(PATHS["processed_train_data_path"], index=False)
+
+    return predictions_plot, None
 
 
 def create_prediction_plot(predictions_df):
