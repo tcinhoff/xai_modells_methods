@@ -2,14 +2,14 @@ from dash import dcc, html
 import plotly.graph_objs as go
 from sklearn.inspection import partial_dependence
 from app_instance import app, PATHS
-from dash.dependencies import Input, Output, State
+from dash.dependencies import Input, Output
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import pickle
-import io
 
 
-def get_pdp_component(test_data):
+def get_pdp_component(selected_model, point_index):
+    test_data = pd.read_csv(PATHS["processed_test_data_path"])
     return html.Div(
         [
             dcc.Dropdown(
@@ -39,7 +39,7 @@ def update_pdp_plot(selected_feature):
 
 def create_pdp_plot(model, feature, data):
     pdp_results = partial_dependence(model, data, [feature])
-    feature_values = pdp_results["values"][0]
+    feature_values = pdp_results["grid_values"][0]
     pdp_values = pdp_results["average"][0]
 
     trace = go.Scatter(x=feature_values, y=pdp_values, mode="lines", name="PDP")

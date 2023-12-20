@@ -8,17 +8,18 @@ import io
 from app_instance import app, PATHS
 import pickle
 from backend.models.models_config import MODELS
+import dash_bootstrap_components as dbc
 
 
 def get_model_performance():
     return html.Div(
         [
             html.H3("Model Performance"),
-            html.Button("Train Model", id="train-model-button"),
+            dbc.Button("Train Model", id="train-model-button", size="sm"),
             dcc.Graph(
                 id="model-performance-graph",
                 config={"staticPlot": False},
-                style={"width": "100%", "height": "400px"},
+                style={"width": "95%", "height": "400px"},
             ),
             html.Div(id="train-model-output"),
         ],
@@ -64,6 +65,8 @@ def update_graph(n_clicks, selected_model):
 
     predictions_df.to_csv(PATHS["prediction_path"], index=False)
     test_data.to_csv(PATHS["processed_test_data_path"], index=False)
+    train_data = train_data.drop(columns=["yhat"])
+    train_data.to_csv(PATHS["processed_train_data_path"], index=False)
 
     return predictions_plot, None
 
