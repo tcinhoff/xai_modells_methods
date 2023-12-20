@@ -49,10 +49,11 @@ def update_graph(n_clicks, selected_model):
     test_index = test_data.date
     train_data = train_data.drop(columns=["date"])
     test_data = test_data.drop(columns=["date"])
+    target_col = list(set(train_data.columns) - set(test_data.columns))[0]
 
     if selected_model in MODELS:
         model_class = MODELS[selected_model]["class"]
-        model, predictions = get_model_prediction(model_class(train_data), test_data)
+        model, predictions = get_model_prediction(model_class(train_data, target_col), test_data)
     else:
         return go.Figure(), "Please select a model."
 

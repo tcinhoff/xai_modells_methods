@@ -65,11 +65,8 @@ def display_selected_point(clickData, selected_method):
 
     pickled_model = open(PATHS["model_path"], "rb").read()
     model = pickle.loads(pickled_model)
-    if model is None:
-        return "Train a model first."
-
-    if clickData is None:
-        return "Click a point in the graph to analyze."
+    if model is None or clickData is None:
+        return None
 
     prediction = pd.read_csv(PATHS["prediction_path"])
     point_index = clickData["points"][0]["pointIndex"]
