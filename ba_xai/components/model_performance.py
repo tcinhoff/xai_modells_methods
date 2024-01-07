@@ -1,3 +1,4 @@
+import json
 from dash import dcc, html
 from dash.dependencies import Input, Output, State
 import plotly.graph_objs as go
@@ -33,9 +34,10 @@ def get_model_performance():
         Output("train-model-output", "children"),
     ],
     [Input("train-model-button", "n_clicks")],
-    [State("model-selection-radioitems", "value")],
+    [State("model-selection-radioitems", "value"),
+     State("upload-config", "contents")],
 )
-def update_graph(n_clicks, selected_model):
+def update_graph(n_clicks, selected_model, model_config_json):
     if n_clicks is None:
         raise PreventUpdate
 
@@ -46,6 +48,16 @@ def update_graph(n_clicks, selected_model):
     if train_data.empty or test_data.empty:
         return go.Figure(), "Please upload data."
 
+    # Versuche, die Konfiguration zu parsen, falls vorhanden
+    model_config = None
+    if model_config_json:
+        try:
+            content_type, content_string = model_config_json.split(',')
+            decoded = base64.b64decode(content_string)
+            model_config = json.loads(decoded.decode('utf-8'))
+        except (ValueError, json.JSONDecodeError) as e:
+            return go.Figure(), f"Error parsing JSON: {e}"
+        
     test_index = test_data.date
     train_data = train_data.drop(columns=["date"])
     test_data = test_data.drop(columns=["date"])
@@ -53,7 +65,12 @@ def update_graph(n_clicks, selected_model):
 
     if selected_model in MODELS:
         model_class = MODELS[selected_model]["class"]
-        model, predictions = get_model_prediction(model_class(train_data, target_col), test_data)
+        if model_config is not None and MODELS[selected_model]["config_upload"]:
+            model, predictions = get_model_prediction(
+                model_class(train_data, target_col, model_config), test_data
+            )
+        else:
+            model, predictions = get_model_prediction(model_class(train_data, target_col), test_data)
     else:
         return go.Figure(), "Please select a model."
 

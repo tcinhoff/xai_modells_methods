@@ -6,6 +6,7 @@ import pandas as pd
 from app_instance import app, PATHS
 import dash_bootstrap_components as dbc
 
+
 def get_data_upload_button(id):
     return html.Div(
         dcc.Upload(
@@ -40,8 +41,7 @@ def update_upload_text(contents, filename, id):
     if contents is None:
         return html.Div([f"Drag and Drop or Select {id['index']}"])
 
-    success, message = process_and_save_uploaded_data(contents, filename, id["index"])
-    return html.Div([message])
+    return html.Div([process_and_save_uploaded_data(contents, filename, id["index"])])
 
 
 def process_and_save_uploaded_data(contents, filename, id_index):
@@ -55,8 +55,8 @@ def process_and_save_uploaded_data(contents, filename, id_index):
                 "train_data_path" if id_index == "Training Files" else "test_data_path"
             )
             df.to_csv(PATHS[path_key], index=False)
-            return True, f"{filename} - Upload successful"
+            return f"{filename} - Upload successful"
         except Exception as e:
-            return False, "There was an error processing this file."
+            return "There was an error processing this file."
     else:
-        return False, "Please upload a CSV file."
+        return "Please upload a CSV file."

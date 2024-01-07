@@ -4,7 +4,7 @@ from sklearn.pipeline import make_pipeline
 from .base_model import BaseModel
 
 class SklearnGAM(BaseModel):
-    def __init__(self, train, target_col="yhat"):
+    def __init__(self, train, target_col="yhat", config=None):
         super().__init__(train, target_col)
         # Pipeline, die Spline-Transformation mit einem linearen Modell kombiniert
         self.model = make_pipeline(SplineTransformer(), LinearRegression())
