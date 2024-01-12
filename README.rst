@@ -13,7 +13,7 @@ und dann kann man eigentlich schon mit poetry run python ba_xai/app.py starten
 
 Was fehlt noch?
 
-GAM läuft noch nicht
+GAM hat Probleme mit SHAP
 
 Auslagern der Config mittels autoregistation und decoratorn:
 # Decorator zur Registrierung der Klassen
