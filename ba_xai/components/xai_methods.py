@@ -4,27 +4,37 @@ import pandas as pd
 from app_instance import app, PATHS
 import pickle
 from .xai_components.xai_methods_config import XAI_METHODS
+from .model_selection import MODELS
 
 
 def get_xai_methods():
-    options = [
-        {"label": method_info["label"], "value": method}
-        for method, method_info in XAI_METHODS.items()
-    ]
-
     return html.Div(
         [
             html.H3("XAI Method Selection"),
+            html.Div(id="selected-point", style={"marginTop": "15px", "marginBottom": "15px"}),
             dcc.Dropdown(
-                options=options,
-                value="Coefficients",
                 id="xai-method-dropdown",
             ),
-            html.Div(id="selected-point", style={"marginTop": "15px"}),
             html.Div(id="xai-output", style={"marginTop": "15px"}),
         ],
         style={"width": "40%", "display": "inline-block"},
     )
+
+
+@app.callback(
+    Output("xai-method-dropdown", "options"),
+    [Input("model-selection-radioitems", "value")],
+)
+def update_xai_dropdown(selected_model):
+    if selected_model in MODELS:
+        compatible_methods = MODELS[selected_model]["compatible_methods"]
+        filtered_options = [
+            {"label": XAI_METHODS[method]["label"], "value": method}
+            for method in compatible_methods
+            if method in XAI_METHODS
+        ]
+        return filtered_options
+    return []
 
 
 @app.callback(
@@ -38,18 +48,13 @@ def get_xai_methods():
 def display_model_evaluation(xai_method, clickData, selected_model):
     pickled_model = open(PATHS["model_path"], "rb").read()
     model = pickle.loads(pickled_model)
-    if model is None:
-        return "Train a model first or select an datapoint."
+    if model is None or xai_method is None:
+        return None
 
     point_index = 0 if clickData is None else clickData["points"][0]["pointIndex"]
 
-    if xai_method in XAI_METHODS and isinstance(
-        model, tuple(XAI_METHODS[xai_method]["compatible_models"])
-    ):
-        xai_function = XAI_METHODS[xai_method]["function"]
-        return xai_function(selected_model, point_index)
-    else:
-        return "Select an appropriate XAI method or ensure the model is compatible."
+    xai_function = XAI_METHODS[xai_method]["function"]
+    return xai_function(selected_model, point_index)
 
 
 @app.callback(
@@ -60,13 +65,13 @@ def display_model_evaluation(xai_method, clickData, selected_model):
     ],
 )
 def display_selected_point(clickData, selected_method):
-    if selected_method in ["Coefficients", "PDP"]:
-        return None
+    if selected_method in ["COEFFICIENTS", "PDP"]:
+        return "Method is datapoint independent."
 
     pickled_model = open(PATHS["model_path"], "rb").read()
     model = pickle.loads(pickled_model)
     if model is None or clickData is None:
-        return None
+        return "To use the xai methods train a model and select a datapoint from the prediction."
 
     prediction = pd.read_csv(PATHS["prediction_path"])
     point_index = clickData["points"][0]["pointIndex"]

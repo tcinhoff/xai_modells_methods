@@ -16,16 +16,75 @@ def get_model_performance():
     return html.Div(
         [
             html.H3("Model Performance"),
-            dbc.Button("Train Model", id="train-model-button", size="sm"),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        dbc.Button(
+                            "Train Model",
+                            id="train-model-button",
+                            size="sm",
+                            className="align-self-start me-1",
+                            style={"marginTop": "15px"},
+                        ),
+                        width="auto",
+                        className="align-self-start",
+                    ),
+                    dbc.Col(
+                        html.Div(
+                            [
+                                dbc.Button(
+                                    "Download Config",
+                                    id="download-config-button",
+                                    size="sm",
+                                    className="align-self-end me-1",
+                                    style={"marginTop": "15px"},
+                                ),
+                                dbc.Button(
+                                    "Download Prediction",
+                                    id="download-prediction-button",
+                                    size="sm",
+                                    style={"marginTop": "15px"},
+                                ),
+                            ],
+                        ),
+                        width="auto",
+                        className="align-self-end me-1",
+                    ),
+                ],
+                justify="between",
+                style={"width": "95%"},
+            ),
             dcc.Graph(
                 id="model-performance-graph",
                 config={"staticPlot": False},
                 style={"width": "95%", "height": "400px"},
             ),
             html.Div(id="train-model-output"),
+            dcc.Download(id="download-config"),
+            dcc.Download(id="download-prediction"),
         ],
         style={"width": "40%", "display": "inline-block"},
     )
+
+
+@app.callback(
+    Output("download-config", "data"),
+    Input("download-config-button", "n_clicks"),
+    prevent_initial_call=True,
+)
+def download_config(n_clicks):
+    if n_clicks:
+        return dcc.send_file(PATHS["config_path"])
+
+
+@app.callback(
+    Output("download-prediction", "data"),
+    Input("download-prediction-button", "n_clicks"),
+    prevent_initial_call=True,
+)
+def download_prediction(n_clicks):
+    if n_clicks:
+        return dcc.send_file(PATHS["prediction_path"])
 
 
 @app.callback(
@@ -34,10 +93,9 @@ def get_model_performance():
         Output("train-model-output", "children"),
     ],
     [Input("train-model-button", "n_clicks")],
-    [State("model-selection-radioitems", "value"),
-     State("upload-config", "contents")],
+    State("model-selection-radioitems", "value"),
 )
-def update_graph(n_clicks, selected_model, model_config_json):
+def update_graph(n_clicks, selected_model):
     if n_clicks is None:
         raise PreventUpdate
 
@@ -50,14 +108,12 @@ def update_graph(n_clicks, selected_model, model_config_json):
 
     # Versuche, die Konfiguration zu parsen, falls vorhanden
     model_config = None
-    if model_config_json:
-        try:
-            content_type, content_string = model_config_json.split(',')
-            decoded = base64.b64decode(content_string)
-            model_config = json.loads(decoded.decode('utf-8'))
-        except (ValueError, json.JSONDecodeError) as e:
-            return go.Figure(), f"Error parsing JSON: {e}"
-        
+    try:
+        with open(PATHS["config_path"], "r") as file:
+            model_config = json.load(file)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        return go.Figure(), f"Error loading config: {e}"
+
     test_index = test_data.date
     train_data = train_data.drop(columns=["date"])
     test_data = test_data.drop(columns=["date"])
@@ -70,7 +126,9 @@ def update_graph(n_clicks, selected_model, model_config_json):
                 model_class(train_data, target_col, model_config), test_data
             )
         else:
-            model, predictions = get_model_prediction(model_class(train_data, target_col), test_data)
+            model, predictions = get_model_prediction(
+                model_class(train_data, target_col), test_data
+            )
     else:
         return go.Figure(), "Please select a model."
 
