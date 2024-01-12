@@ -4,7 +4,6 @@ import base64
 import io
 import pandas as pd
 from app_instance import app, PATHS
-import dash_bootstrap_components as dbc
 
 
 def get_data_upload_button(id):

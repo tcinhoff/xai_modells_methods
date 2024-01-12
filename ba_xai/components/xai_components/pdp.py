@@ -33,7 +33,7 @@ def update_pdp_plot(selected_feature):
 
     if selected_feature is None or test_data is None or model is None:
         raise PreventUpdate
-    
+
     return create_pdp_plot(model, selected_feature, test_data)
 
 

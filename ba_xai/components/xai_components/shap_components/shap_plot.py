@@ -9,15 +9,12 @@ from io import BytesIO
 from backend.models.models_config import MODELS
 
 
-def get_shap_violin_component(selected_model, point_index):
-    if "SHAP" in MODELS[selected_model]["compatible_methods"]:
-        image_src = create_shap_violin_plot(selected_model, point_index)
-        return html.Img(src=image_src, style={"width": "100%", "height": "500px"})
-    else:
-        return "SHAP analysis is not available for this model."
+def get_shap_plot_component(selected_model, point_index, selected_method):
+    image_src = create_shap_plot(selected_model, point_index, selected_method)
+    return html.Img(src=image_src, style={"width": "100%", "height": "500px"})
 
 
-def create_shap_violin_plot(selected_model, point_index):
+def create_shap_plot(selected_model, point_index, selected_method):
     test_data = pd.read_csv(PATHS["processed_test_data_path"])
     # Scale test_data if nessessary
     if MODELS[selected_model]["use_data_noramlization"]:
@@ -30,12 +27,17 @@ def create_shap_violin_plot(selected_model, point_index):
     # Wählen Sie den richtigen Explainer basierend auf dem Modelltyp
     explainer = shap.Explainer(model, test_data)
     shap_values = explainer(test_data)
-    return create_shap_violin_image(shap_values, point_index)
+    return create_shap_image(shap_values, point_index, selected_method)
 
 
-def create_shap_violin_image(shap_values, point_index):
+def create_shap_image(shap_values, point_index, selected_method):
     plt.figure(figsize=(10, 6))
-    shap.plots.violin(shap_values, max_display=14, show=False)
+    if selected_method["local"]:
+        selected_method["function"](
+            shap_values[point_index], max_display=14, show=False
+        )
+    else:
+        selected_method["function"](shap_values, max_display=14, show=False)
 
     # Speichern des Plots als Bild im Speicher
     img_buf = BytesIO()

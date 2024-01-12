@@ -40,6 +40,5 @@ def update_model_parameters(selected_model):
         json.dump(None, file, indent=4)
 
     if MODELS[selected_model]["config_upload"]:
-        # hier wird noch alles richtig aufgerufen
         return get_model_config_selection()
-    return None
+    return html.Div()

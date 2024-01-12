@@ -5,9 +5,11 @@ from app_instance import PATHS
 import pickle
 import pandas as pd
 
+
 def get_coefficents_component(selected_model, point_index):
     coef_fig = create_coefficients_plot()
     return dcc.Graph(figure=coef_fig)
+
 
 def create_coefficients_plot():
     test_data = pd.read_csv(PATHS["processed_test_data_path"])

@@ -1,40 +1,58 @@
-Also was steht an?
-Diese Woche:
-Integration von neuen Modellen (LR, XGB, GAM)
-Integration von neuen Methoden (SHAP, LIME)
-Integration von Configs
-Schönes anzeigen von Methoden
+Was fehlt noch?
+
+GAM läuft noch nicht
+
+Auslagern der Config mittels autoregistation und decoratorn:
+# Decorator zur Registrierung der Klassen
+def register_model(cls):
+    if 'CONFIG' in cls.__dict__:
+        ModelRegistry.register(cls.__name__, cls.CONFIG)
+    return cls
+
+class ModelRegistry:
+    models = {}
+
+    @classmethod
+    def register(cls, name, config):
+        cls.models[name] = config
+
+# Beispiel für die Verwendung des Decorators
+@register_model
+class LGBMModel(BaseModel):
+    CONFIG = {
+        "label": "LGBM",
+        "compatible_methods": ["SHAP", "LIME"],
+        "config_upload": True,
+        "use_data_normalization": False
+    }
+    # Rest der Klasse...
+
+# Zugriff auf die registrierten Modelle
+print(ModelRegistry.models)
 
 
-Nächste Woche:
-Refactoring und schönes UI
+Scheint mir nicht wirkich intuitiv zu sein, auch wenn es eine coole Funktion zu scheinen ist.
+Auch das auslagern der Config scheint mir nicht angebracht zu sein, da man sich dann nicht mehr so leicht am Muster orientieren kann und das zu fehlern führen würde
+Auch müsste man weiterhin 2 Dateien anfassen
+
+class LGBMModel(BaseModel):
+    CONFIG = {
+        "label": "LGBM",
+        "compatible_methods": ["SHAP", "LIME"],
+        "config_upload": True,
+        "use_data_normalization": False
+    }
+
+    def __init__(self, train, target_col="yhat", config=None):
+        super().__init__(train, target_col)
+        self.model = LGBMRegressor(verbose=-1, importance_type="gain") if config is None else LGBMRegressor(**config)
+
+    # Rest der Methoden...
+
+Neue Datei:
+
+models = [LGBMModel, LinearRegressionModel, XGBoostModel, SklearnGAM]  # und weitere Modelle
+config = {model.__name__: model.CONFIG for model in models}
 
 
-Zum Schreiben:
-Inhaltsverzeichnis entsprechend anpassen
-
-Was funktioniert aktuell noch nicht?
-- Die Configs sind noch nicht integriert
-LIME und SHAP funktionieren für LR und GAM nicht
-LIME hat im allgemeinen noch starke Probleme, es wird nichts angezeigt und alte Graphen bleiben bestehen
-
-Wichtige Code segmente:
-lgb.LGBMRegressor(
-            verbose=-1, **self.parameters, importance_type="gain"
-        ) #self.parameters betrifft nur die Hyperparameter
-
-wichtig ist: 
-x, y, sample_weights = self._get_training_data(hourly_sales)
-self.model.fit(x, y, sample_weight=sample_weights)
-
-
-
-
-README:
-Was wird erwartet?
-Als Eingabe für die Daten werden nur csv Dateien akzeptiert.
-Die Trainingsdaten müssen eine spalte date, welches den index angibt haben. Diese wird nur für intere Zwecke verwendet
-Die Trainingsdaten müssen eine spalte yhat, welche die vorhergesagten Werte enthält haben.
-
-Die Testdaten müssen eine spalte date, welches den index angibt haben. Diese wird nur für intere Zwecke verwendet
-Die Testdaten dürfen keine spalte yhat haben und müssen sonst mit den Trainingsdaten spalten übereinstimmen.
+Würde daher bei Configs bleiben

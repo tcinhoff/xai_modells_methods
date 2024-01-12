@@ -42,7 +42,6 @@ def get_model_config_selection():
                 style={"width": "100%", "marginTop": "15px"},
             ),
             html.Div(id="manually-configure-div"),
-            html.Div(id="empty_div", style={"display": "none"}),
         ],
     )
 
@@ -76,6 +75,8 @@ def update_model_parameters(selected_method, selected_model, contents, filename)
         return generate_model_parameters(selected_model), {"display": "none"}, None
 
     if contents is None:
+        with open(PATHS["config_path"], "w") as file:
+            json.dump(None, file, indent=4)
         return None, config_upload_style, html.Div([f"Drag and Drop or Select Config"])
 
     return (

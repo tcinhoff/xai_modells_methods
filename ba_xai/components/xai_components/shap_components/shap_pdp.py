@@ -10,7 +10,7 @@ import base64
 from io import BytesIO
 
 
-def get_shap_pdp_component(selected_model, point_index):
+def get_shap_pdp_component():
     test_data = pd.read_csv(PATHS["processed_test_data_path"])
     return html.Div(
         [
@@ -44,9 +44,6 @@ def update_shap_pdp_plot(selected_feature):
 
 
 def create_shap_pdp_image(model, feature, data):
-    explainer = shap.Explainer(model.predict, data)
-
-    shap_values = explainer(data)
     shap.partial_dependence_plot(
         feature,
         model.predict,
