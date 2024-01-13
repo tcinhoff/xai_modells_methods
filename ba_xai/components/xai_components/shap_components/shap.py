@@ -8,6 +8,7 @@ from shap.plots import waterfall, bar, beeswarm, violin
 
 selected_shape_method = None
 
+
 def get_shap_component(selected_model, point_index):
     options = [
         {"label": method_info["label"], "value": method}
@@ -21,7 +22,12 @@ def get_shap_component(selected_model, point_index):
                 id="shap-method-dropdown",
                 value=selected_shape_method,
             ),
-            html.Div(id="shap-output", style={"marginTop": "15px"}),
+            dcc.Loading(
+                id="loading-1",
+                type="dot",
+                children=html.Div(id="shap-output", style={"marginTop": "15px"}),
+                style={"marginTop": "35px"},
+            ),
         ],
         style={"width": "100%", "display": "inline-block"},
     )
@@ -39,12 +45,12 @@ def display_model_evaluation(shap_method, clickData, selected_model):
     global selected_shape_method
     if selected_model is None or shap_method is None:
         return html.Div()
-    
+
     if callback_context.triggered[0]["prop_id"] == "shap-method-dropdown.value":
         selected_shape_method = shap_method
 
     point_index = 0 if clickData is None else clickData["points"][0]["pointIndex"]
-    if selected_shape_method == "ShapPDP":
+    if selected_shape_method == "Shap-PDP":
         return get_shap_pdp_component()
     return get_shap_plot_component(
         selected_model, point_index, SHAP_METHODS[selected_shape_method]
@@ -56,6 +62,11 @@ SHAP_METHODS = {
         "label": "SHAP Waterfall",
         "local": True,
         "function": waterfall,
+    },
+    "Shap-PDP": {
+        "label": "SHAP PDP",
+        "local": None,
+        "function": None,
     },
     "SHAP-Bar": {
         "label": "SHAP Bar",

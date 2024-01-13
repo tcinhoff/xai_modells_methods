@@ -22,10 +22,13 @@ def create_shap_plot(selected_model, point_index, selected_method):
         test_data = pd.DataFrame(scaler.transform(test_data), columns=test_data.columns)
 
     pickled_model = open(PATHS["model_path"], "rb").read()
-    model = pickle.loads(pickled_model).model
+    model = pickle.loads(pickled_model)
 
     # Wählen Sie den richtigen Explainer basierend auf dem Modelltyp
-    explainer = shap.Explainer(model, test_data)
+    if selected_model == "GAM":
+        explainer = shap.Explainer(model.predict, test_data)
+    else:
+        explainer = shap.Explainer(model.model, test_data)
     shap_values = explainer(test_data)
     return create_shap_image(shap_values, point_index, selected_method)
 
