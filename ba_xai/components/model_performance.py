@@ -141,7 +141,7 @@ def update_graph(n_clicks, selected_model):
 
     predictions_df.to_csv(PATHS["prediction_path"], index=False)
     test_data.to_csv(PATHS["processed_test_data_path"], index=False)
-    train_data = train_data.drop(columns=["yhat"])
+    train_data = train_data.drop(columns=[target_col])
     train_data.to_csv(PATHS["processed_train_data_path"], index=False)
 
     return predictions_plot, None
