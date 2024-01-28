@@ -1,4 +1,4 @@
-from backend.models import LGBMModel, LinearRegressionModel, XGBoostModel, SklearnGAM
+from backend.models import LGBMModel, LinearRegressionModel, XGBoostModel, SklearnGAM, TabNetModel
 
 MODELS = {
     "LR": {
@@ -25,6 +25,13 @@ MODELS = {
     "XGBoost": {
         "label": "XGBoost",
         "class": XGBoostModel,
+        "compatible_methods": ["SHAP", "LIME"],
+        "config_upload": True,
+        "use_data_noramlization": False,
+    },
+    "TabNet": {
+        "label": "TabNet",
+        "class": TabNetModel,
         "compatible_methods": ["SHAP", "LIME"],
         "config_upload": True,
         "use_data_noramlization": False,
