@@ -12,7 +12,7 @@ MODELS = {
         "label": "GAM",
         "class": SklearnGAM,
         "compatible_methods": ["SHAP", "LIME"],
-        "config_upload": True,
+        "config_upload": False,
         "use_data_noramlization": False,
     },
     "LGBM": {
@@ -33,7 +33,7 @@ MODELS = {
         "label": "TabNet",
         "class": TabNetModel,
         "compatible_methods": ["SHAP", "LIME"],
-        "config_upload": True,
+        "config_upload": False,
         "use_data_noramlization": False,
     },
 }
