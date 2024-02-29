@@ -18,8 +18,7 @@ def get_data_upload_model_selection():
     return html.Div(
         [
             html.H3("Data Upload"),
-            get_data_upload_button("Training Files"),
-            get_data_upload_button("Test Files"),
+            get_data_upload_button(),
             get_feature_selection_modal(),
             html.H3("Model Selection", style={"marginTop": "30px"}),
             dbc.RadioItems(

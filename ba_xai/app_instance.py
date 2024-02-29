@@ -5,6 +5,7 @@ import os
 
 PATHS = {
     "model_path": "temp/model.pkl",
+    "train_test_data_path": "temp/train_test_data.csv",
     "train_data_path": "temp/train_data.csv",
     "processed_train_data_path": "temp/processed_train_data.csv",
     "test_data_path": "temp/test_data.csv",

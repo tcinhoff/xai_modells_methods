@@ -27,7 +27,7 @@ def get_feature_selection_modal():
                 "Select Features",
                 id="feature-reduction-button",
                 n_clicks=0,
-                style={"marginTop": "10px"},
+                style={"marginTop": "15px"},
             ),
         ]
     )
