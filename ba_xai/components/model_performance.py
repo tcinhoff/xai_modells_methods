@@ -93,9 +93,12 @@ def download_prediction(n_clicks):
         Output("train-model-output", "children"),
     ],
     [Input("train-model-button", "n_clicks")],
-    State("model-selection-radioitems", "value"),
+    [
+        State("model-selection-radioitems", "value"),
+        State("selected-features-store", "data"),
+    ],
 )
-def update_graph(n_clicks, selected_model):
+def update_graph(n_clicks, selected_model, selected_features):
     if n_clicks is None:
         raise PreventUpdate
 
@@ -118,6 +121,11 @@ def update_graph(n_clicks, selected_model):
     train_data = train_data.drop(columns=["date"])
     test_data = test_data.drop(columns=["date"])
     target_col = list(set(train_data.columns) - set(test_data.columns))[0]
+    
+    # reduce to selected features
+    if selected_features:
+        train_data = train_data[selected_features + [target_col]]
+        test_data = test_data[selected_features]
 
     if selected_model in MODELS:
         model_class = MODELS[selected_model]["class"]
@@ -201,9 +209,7 @@ def get_model_prediction(model, test):
     else:
         # Nur Vorhersagen wurden zurückgegeben, keine Standardabweichungen
         predictions = output
-        std_dev = (
-            None  # Standardabweichungen nicht verfügbar
-        )
+        std_dev = None  # Standardabweichungen nicht verfügbar
         return model, predictions, std_dev
 
 

@@ -6,6 +6,7 @@ from app_instance import PATHS, app
 from backend.models.models_config import MODELS
 from components.data_upload import get_data_upload_button
 from .model_config_selection import get_model_config_selection
+from .feature_selection_modal import get_feature_selection_modal
 
 
 def get_data_upload_model_selection():
@@ -19,6 +20,7 @@ def get_data_upload_model_selection():
             html.H3("Data Upload"),
             get_data_upload_button("Training Files"),
             get_data_upload_button("Test Files"),
+            get_feature_selection_modal(),
             html.H3("Model Selection", style={"marginTop": "30px"}),
             dbc.RadioItems(
                 options=options,
@@ -42,3 +44,4 @@ def update_model_parameters(selected_model):
     if MODELS[selected_model]["config_upload"]:
         return get_model_config_selection()
     return html.Div()
+
