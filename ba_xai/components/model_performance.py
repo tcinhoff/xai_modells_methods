@@ -122,18 +122,18 @@ def update_graph(n_clicks, selected_model):
     if selected_model in MODELS:
         model_class = MODELS[selected_model]["class"]
         if model_config is not None and MODELS[selected_model]["config_upload"]:
-            model, predictions = get_model_prediction(
+            model, predictions, std_dev = get_model_prediction(
                 model_class(train_data, target_col, model_config), test_data
             )
         else:
-            model, predictions = get_model_prediction(
+            model, predictions, std_dev = get_model_prediction(
                 model_class(train_data, target_col), test_data
             )
     else:
         return go.Figure(), "Please select a model."
 
     predictions_df = pd.DataFrame({"date": test_index, "yhat": predictions})
-    predictions_plot = create_prediction_plot(predictions_df)
+    predictions_plot = create_prediction_plot(predictions_df, std_dev)
 
     # Speichern des trainierten Modells und der Vorhersagen
     with open(PATHS["model_path"], "wb") as f:
@@ -147,7 +147,7 @@ def update_graph(n_clicks, selected_model):
     return predictions_plot, None
 
 
-def create_prediction_plot(predictions_df):
+def create_prediction_plot(predictions_df, std_dev=None):
     trace = go.Scatter(
         x=predictions_df["date"],
         y=predictions_df["yhat"],
@@ -159,13 +159,52 @@ def create_prediction_plot(predictions_df):
         xaxis={"title": "Date"},
         yaxis={"title": "Predicted Value"},
     )
-    return {"data": [trace], "layout": layout}
+
+    data = [trace]
+
+    if std_dev is not None:
+        upper_bound = go.Scatter(
+            x=predictions_df["date"],
+            y=predictions_df["yhat"] + std_dev,
+            mode="lines",
+            marker=dict(color="#444"),
+            line=dict(width=0),
+            name="Upper Bound",
+            showlegend=False,
+            fillcolor="rgba(68, 68, 68, 0.3)",
+            fill="tonexty",
+        )
+        lower_bound = go.Scatter(
+            x=predictions_df["date"],
+            y=predictions_df["yhat"] - std_dev,
+            mode="lines",
+            marker=dict(color="#444"),
+            line=dict(width=0),
+            name="Lower Bound",
+            showlegend=False,
+            fillcolor="rgba(68, 68, 68, 0.3)",
+            fill="tonexty",
+        )
+        data.extend([lower_bound, upper_bound])
+
+    return {"data": data, "layout": layout}
 
 
 def get_model_prediction(model, test):
     model.fit()
-    predictions = model.predict(test)
-    return model, predictions
+    output = model.predict(test)
+    # Überprüfen, ob die Vorhersage als Tuple mit zwei Elementen (predictions,
+    # std_dev) zurückgegeben wurde
+    if isinstance(output, tuple) and len(output) == 2:
+        predictions, std_dev = output
+        return model, predictions, std_dev
+    else:
+        # Nur Vorhersagen wurden zurückgegeben, keine Standardabweichungen
+        predictions = output
+        std_dev = (
+            None  # Standardabweichungen nicht verfügbar
+        )
+        return model, predictions, std_dev
 
 
 def parse_contents(contents):

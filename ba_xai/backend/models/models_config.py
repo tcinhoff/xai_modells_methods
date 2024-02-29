@@ -1,4 +1,11 @@
-from backend.models import LGBMModel, LinearRegressionModel, XGBoostModel, SklearnGAM, TabNetModel
+from backend.models import (
+    LGBMModel,
+    LinearRegressionModel,
+    XGBoostModel,
+    SklearnGAM,
+    TabNetModel,
+    GPRModel,
+)
 
 MODELS = {
     "LR": {
@@ -32,6 +39,13 @@ MODELS = {
     "TabNet": {
         "label": "TabNet",
         "class": TabNetModel,
+        "compatible_methods": ["SHAP", "LIME"],
+        "config_upload": False,
+        "use_data_noramlization": False,
+    },
+    "GPR": {
+        "label": "GPR",
+        "class": GPRModel,
         "compatible_methods": ["SHAP", "LIME"],
         "config_upload": False,
         "use_data_noramlization": False,
