@@ -1,7 +1,7 @@
 from dash import dcc, html, callback_context
 from dash.dependencies import Input, Output, State
 from app_instance import app, PATHS
-import pickle
+from dash.exceptions import PreventUpdate
 from .shap_pdp import get_shap_pdp_component
 from .shap_plot import get_shap_plot_component
 from shap.plots import waterfall, bar, beeswarm, violin
@@ -23,7 +23,7 @@ def get_shap_component(selected_model, point_index):
                 value=selected_shape_method,
             ),
             dcc.Loading(
-                id="loading-1",
+                id="loading-4",
                 type="dot",
                 children=html.Div(id="shap-output", style={"marginTop": "15px"}),
                 style={"marginTop": "35px"},
@@ -42,6 +42,9 @@ def get_shap_component(selected_model, point_index):
     State("model-selection-radioitems", "value"),
 )
 def display_model_evaluation(shap_method, clickData, selected_model):
+    if clickData is None or clickData["points"][0]["curveNumber"] != 1:
+        raise PreventUpdate
+        
     global selected_shape_method
     if selected_model is None or shap_method is None:
         return html.Div()
@@ -49,7 +52,7 @@ def display_model_evaluation(shap_method, clickData, selected_model):
     if callback_context.triggered[0]["prop_id"] == "shap-method-dropdown.value":
         selected_shape_method = shap_method
 
-    point_index = 0 if clickData is None else clickData["points"][0]["pointIndex"]
+    point_index = clickData["points"][0]["pointIndex"]
     if selected_shape_method == "Shap-PDP":
         return get_shap_pdp_component()
     return get_shap_plot_component(

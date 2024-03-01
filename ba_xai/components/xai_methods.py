@@ -2,6 +2,7 @@ from dash import dcc, html
 from dash.dependencies import Input, Output, State
 import pandas as pd
 from app_instance import app, PATHS
+from dash.exceptions import PreventUpdate
 import pickle
 from .xai_components.xai_methods_config import XAI_METHODS
 from .model_selection import MODELS
@@ -46,12 +47,15 @@ def update_xai_dropdown(selected_model):
     [State("model-selection-radioitems", "value")],
 )
 def display_model_evaluation(xai_method, clickData, selected_model):
+    if clickData is None or clickData["points"][0]["curveNumber"] != 1:
+        raise PreventUpdate
+
     pickled_model = open(PATHS["model_path"], "rb").read()
     model = pickle.loads(pickled_model)
     if model is None or xai_method is None:
         return None
 
-    point_index = 0 if clickData is None else clickData["points"][0]["pointIndex"]
+    point_index = clickData["points"][0]["pointIndex"]
 
     xai_function = XAI_METHODS[xai_method]["function"]
     return xai_function(selected_model, point_index)
@@ -64,13 +68,13 @@ def display_model_evaluation(xai_method, clickData, selected_model):
         Input("xai-method-dropdown", "value"),
     ],
 )
-def display_selected_point(clickData, selected_method):
+def display_selected_point(clickData, selected_method):    
     if selected_method in ["COEFFICIENTS", "PDP"]:
         return "Method is datapoint independent."
 
     pickled_model = open(PATHS["model_path"], "rb").read()
     model = pickle.loads(pickled_model)
-    if model is None or clickData is None:
+    if model is None or clickData is None or clickData["points"][0]["curveNumber"] != 1:
         return "To use the xai methods train a model and select a datapoint from the prediction."
 
     prediction = pd.read_csv(PATHS["prediction_path"])

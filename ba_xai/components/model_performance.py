@@ -54,10 +54,18 @@ def get_model_performance():
                 justify="between",
                 style={"width": "95%"},
             ),
-            dcc.Graph(
-                id="model-performance-graph",
-                config={"staticPlot": False},
-                style={"width": "95%", "height": "400px"},
+            dcc.Loading(
+                id="loading-2",
+                type="default",  # Hier können Sie verschiedene Ladeanimationen auswählen: 'graph', 'cube', 'circle', 'dot', oder 'default'
+                children=[
+                    dcc.Graph(
+                        id="model-performance-graph",
+                        config={"staticPlot": False},
+                        style={"width": "95%", "height": "400px"},
+                    )
+                ],
+                color="#119DFF",  # Farbe der Ladeanimation
+                fullscreen=False,  # Setzen Sie dies auf True, um die Ladeanimation im Vollbildmodus anzuzeigen
             ),
             html.Div(id="train-model-output"),
             dcc.Download(id="download-config"),
@@ -96,12 +104,14 @@ def download_prediction(n_clicks):
     [
         State("model-selection-radioitems", "value"),
         State("selected-features-store", "data"),
+        State("target-column-dropdown", "value"), 
     ],
 )
-def update_graph(n_clicks, selected_model, selected_features):
+def update_graph(n_clicks, selected_model, selected_features, target_col):
     if n_clicks is None:
         raise PreventUpdate
 
+    full_data = pd.read_csv(PATHS["train_test_data_path"])
     train_data = pd.read_csv(PATHS["train_data_path"])
     test_data = pd.read_csv(PATHS["test_data_path"])
 
@@ -117,10 +127,10 @@ def update_graph(n_clicks, selected_model, selected_features):
     except (FileNotFoundError, json.JSONDecodeError) as e:
         return go.Figure(), f"Error loading config: {e}"
 
+    actual_values = full_data[full_data["date"].isin(test_data["date"])][target_col]
     test_index = test_data.date
     train_data = train_data.drop(columns=["date"])
     test_data = test_data.drop(columns=["date"])
-    target_col = list(set(train_data.columns) - set(test_data.columns))[0]
     
     # reduce to selected features
     if selected_features:
@@ -140,14 +150,14 @@ def update_graph(n_clicks, selected_model, selected_features):
     else:
         return go.Figure(), "Please select a model."
 
-    predictions_df = pd.DataFrame({"date": test_index, "yhat": predictions})
+    predictions_df = pd.DataFrame({"date": test_index, "yhat": predictions, "actual": actual_values.values})
     predictions_plot = create_prediction_plot(predictions_df, std_dev)
 
     # Speichern des trainierten Modells und der Vorhersagen
     with open(PATHS["model_path"], "wb") as f:
         pickle.dump(model, f)
 
-    predictions_df.to_csv(PATHS["prediction_path"], index=False)
+    pd.DataFrame({"date": test_index, "yhat": predictions}).to_csv(PATHS["prediction_path"], index=False)
     test_data.to_csv(PATHS["processed_test_data_path"], index=False)
     train_data = train_data.drop(columns=[target_col])
     train_data.to_csv(PATHS["processed_train_data_path"], index=False)
@@ -156,19 +166,29 @@ def update_graph(n_clicks, selected_model, selected_features):
 
 
 def create_prediction_plot(predictions_df, std_dev=None):
-    trace = go.Scatter(
+    actual_trace = go.Scatter(
+        x=predictions_df["date"],
+        y=predictions_df["actual"],
+        mode="lines",
+        name="Actual",
+        line=dict(color="red"),
+    )
+    
+    prediction_trace = go.Scatter(
         x=predictions_df["date"],
         y=predictions_df["yhat"],
         mode="lines",
         name="Predictions",
+        line=dict(color="blue"),
     )
+
     layout = go.Layout(
         title="Model Predictions",
         xaxis={"title": "Date"},
         yaxis={"title": "Predicted Value"},
     )
 
-    data = [trace]
+    data = [actual_trace, prediction_trace]
 
     if std_dev is not None:
         upper_bound = go.Scatter(

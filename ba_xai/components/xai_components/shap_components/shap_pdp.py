@@ -20,7 +20,7 @@ def get_shap_pdp_component():
                 value=None,
             ),
             dcc.Loading(
-                id="loading-1",
+                id="loading-3",
                 type="dot",
                 children=html.Img(id="shap-pdp-image", style={"padding": "20px"}),
             ),

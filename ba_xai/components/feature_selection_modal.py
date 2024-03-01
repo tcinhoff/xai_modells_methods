@@ -8,6 +8,7 @@ from dash.exceptions import PreventUpdate
 import pandas as pd
 import shap
 
+
 def get_feature_selection_modal():
     feature_selection_modal = dbc.Modal(
         [
@@ -127,7 +128,7 @@ def create_feature_selection_row(feature_name, shap_value, is_selected):
             dbc.Col(width=1),
             dbc.Col(
                 dbc.Checkbox(
-                    id={"type":"dynamic-checkbox", "index":feature_name},
+                    id={"type": "dynamic-checkbox", "index": feature_name},
                     className="big-checkbox",
                     value=is_selected,
                 ),
