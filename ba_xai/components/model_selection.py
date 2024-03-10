@@ -3,7 +3,7 @@ from dash import html
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output
 from app_instance import PATHS, app
-from backend.models.models_config import MODELS
+from ba_xai.configs.models_config import MODELS
 from components.data_upload import get_data_upload_button
 from .model_config_selection import get_model_config_selection
 from .feature_selection_modal import get_feature_selection_modal

@@ -1,7 +1,7 @@
 import json
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State, ALL
-from .model_parameters import MODEL_PARAMETERS
+from ba_xai.configs.models_config import MODEL_PARAMETERS
 from app_instance import app, PATHS
 
 

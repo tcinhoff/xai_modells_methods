@@ -3,7 +3,6 @@ from backend.models import (
     LinearRegressionModel,
     XGBoostModel,
     SklearnGAM,
-    TabNetModel,
     GPRModel,
 )
 
@@ -36,18 +35,16 @@ MODELS = {
         "config_upload": True,
         "use_data_noramlization": False,
     },
-    "TabNet": {
-        "label": "TabNet",
-        "class": TabNetModel,
-        "compatible_methods": ["SHAP", "LIME"],
-        "config_upload": False,
-        "use_data_noramlization": False,
-    },
     "GPR": {
         "label": "GPR",
         "class": GPRModel,
         "compatible_methods": ["SHAP", "LIME"],
         "config_upload": False,
-        "use_data_noramlization": False,
+        "use_data_noramlization": True,
     },
+}
+
+MODEL_PARAMETERS = {
+    "LGBM": LGBMModel.LGBM_PARAMS,
+    "XGBoost": XGBoostModel.XGBOOST_PARAMS,
 }

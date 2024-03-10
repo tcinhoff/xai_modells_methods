@@ -3,7 +3,7 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State, ALL
 import numpy as np
 from app_instance import PATHS, app
-from backend.models.models_config import MODELS
+from ba_xai.configs.models_config import MODELS
 from dash.exceptions import PreventUpdate
 import pandas as pd
 import shap
@@ -14,7 +14,26 @@ def get_feature_selection_modal():
         [
             dbc.ModalHeader(dbc.ModalTitle("Select Features")),
             dbc.ModalBody(id="modal-body"),  # Der Inhalt wird dynamisch gefüllt
-            dbc.ModalFooter(dbc.Button("Save", id="close-modal", className="ml-auto")),
+            dbc.ModalFooter(
+                [
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                html.Div("SHAP values calculated with LGBM model"),
+                                className="text-muted",
+                                style={"fontSize": "0.9em", "marginTop": "10px"},
+                            ),
+                            dbc.Col(
+                                dbc.Button(
+                                    "Save", id="close-modal", className="ml-auto"
+                                ),
+                                width={"size": "auto"},
+                            ),
+                        ],
+                        justify="between",
+                    ),
+                ]
+            ),
         ],
         id="feature-selection-modal",
         size="lg",  # Größe des Modals
@@ -39,15 +58,13 @@ def get_feature_selection_modal():
         Output("feature-selection-modal", "is_open"),
         Output("modal-body", "children"),
         Output("selected-features-store", "data"),
-    ],  # Update für den Store hinzugefügt
+    ],
     [Input("feature-reduction-button", "n_clicks"), Input("close-modal", "n_clicks")],
     [
         State("selected-features-store", "data"),
-        State(
-            {"type": "dynamic-checkbox", "index": ALL}, "value"
-        ),  # State für alle dynamischen Checkboxen
+        State({"type": "dynamic-checkbox", "index": ALL}, "value"),
         State({"type": "dynamic-checkbox", "index": ALL}, "id"),
-    ],  # State für die IDs der Checkboxen
+    ],
     prevent_initial_call=True,
 )
 def toggle_modal(
@@ -57,7 +74,6 @@ def toggle_modal(
     if not ctx.triggered or (not n_clicks and not n_clicks_close):
         raise PreventUpdate
 
-    # Laden der Trainings- und Testdaten
     train_data = pd.read_csv(PATHS["train_data_path"])
     test_data = pd.read_csv(PATHS["test_data_path"])
 
@@ -72,7 +88,6 @@ def toggle_modal(
             train_data, test_data
         )
 
-        # Erstellen des Inhalts für das Modal
         content_children = [
             dbc.Row(
                 [
@@ -105,7 +120,6 @@ def toggle_modal(
         return [True, content, no_update]
 
     elif button_id == "close-modal":
-        # Aktualisieren der ausgewählten Features basierend auf den Checkbox-Werten
         updated_selected_features = [
             checkbox_id["index"]
             for checkbox_value, checkbox_id in zip(checkbox_values, checkbox_ids)

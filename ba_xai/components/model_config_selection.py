@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 from app_instance import app, PATHS
 from .model_paramters_selection import generate_model_parameters
-from backend.models.models_config import MODELS
+from ba_xai.configs.models_config import MODELS
 
 
 def get_model_config_selection():

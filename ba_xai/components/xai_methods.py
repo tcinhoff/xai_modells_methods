@@ -4,7 +4,7 @@ import pandas as pd
 from app_instance import app, PATHS
 from dash.exceptions import PreventUpdate
 import pickle
-from .xai_components.xai_methods_config import XAI_METHODS
+from ba_xai.configs.xai_methods_config import XAI_METHODS
 from .model_selection import MODELS
 
 

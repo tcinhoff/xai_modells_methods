@@ -8,7 +8,7 @@ import base64
 import io
 from app_instance import app, PATHS
 import pickle
-from backend.models.models_config import MODELS
+from ba_xai.configs.models_config import MODELS
 import dash_bootstrap_components as dbc
 
 
@@ -163,6 +163,9 @@ def update_graph(n_clicks, selected_model, selected_features, target_col):
     train_data.to_csv(PATHS["processed_train_data_path"], index=False)
 
     return predictions_plot, None
+
+#ToDO Preprocess data
+#TODO Save Data auslagern
 
 
 def create_prediction_plot(predictions_df, std_dev=None):

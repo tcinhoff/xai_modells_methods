@@ -3,8 +3,8 @@ from dash.dependencies import Input, Output, State
 from app_instance import app, PATHS
 from dash.exceptions import PreventUpdate
 from .shap_pdp import get_shap_pdp_component
-from .shap_plot import get_shap_plot_component
-from shap.plots import waterfall, bar, beeswarm, violin
+from ba_xai.backend.xai_methods.shap import SHAP
+from ba_xai.configs.shap_config import SHAP_METHODS
 
 selected_shape_method = None
 
@@ -55,40 +55,7 @@ def display_model_evaluation(shap_method, clickData, selected_model):
     point_index = clickData["points"][0]["pointIndex"]
     if selected_shape_method == "Shap-PDP":
         return get_shap_pdp_component()
-    return get_shap_plot_component(
+    return SHAP.get_shap_plot_component(
         selected_model, point_index, SHAP_METHODS[selected_shape_method]
     )
 
-
-SHAP_METHODS = {
-    "SHAP-Waterfall": {
-        "label": "SHAP Waterfall",
-        "local": True,
-        "function": waterfall,
-    },
-    "Shap-PDP": {
-        "label": "SHAP PDP",
-        "local": None,
-        "function": None,
-    },
-    "SHAP-Bar": {
-        "label": "SHAP Bar",
-        "local": True,
-        "function": bar,
-    },
-    "SHAP-Global-Bar": {
-        "label": "SHAP Global Bar",
-        "local": False,
-        "function": bar,
-    },
-    "SHAP-Beeswarm": {
-        "label": "SHAP Beeswarm",
-        "local": False,
-        "function": beeswarm,
-    },
-    "SHAP-Violin": {
-        "label": "SHAP Violin",
-        "local": False,
-        "function": violin,
-    },
-}
