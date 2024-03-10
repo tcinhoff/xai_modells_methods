@@ -1,6 +1,6 @@
 from dash import dcc, html, callback_context
 from dash.dependencies import Input, Output, State
-from app_instance import app, PATHS
+from app_instance import app
 from dash.exceptions import PreventUpdate
 from .shap_pdp import get_shap_pdp_component
 from ba_xai.backend.xai_methods.shap import SHAP

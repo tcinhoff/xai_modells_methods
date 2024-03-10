@@ -1,6 +1,5 @@
 from .base_model import BaseModel
 from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, ConstantKernel as C
 from sklearn.gaussian_process.kernels import ExpSineSquared, Matern, Sum
 
 

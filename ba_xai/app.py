@@ -1,5 +1,5 @@
 from app_instance import app
-from dash import html, dcc
+from dash import html
 from components.model_selection import get_data_upload_model_selection
 from components.model_performance import get_model_performance
 from components.xai_methods import get_xai_methods
