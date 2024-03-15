@@ -4,6 +4,7 @@ from backend.models import (
     XGBoostModel,
     SklearnGAM,
     GPRModel,
+    MLPModel,    
 )
 
 MODELS = {
@@ -41,6 +42,13 @@ MODELS = {
         "compatible_methods": ["SHAP", "LIME"],
         "config_upload": False,
         "use_data_noramlization": True,
+    },
+    "MLP": {
+        "label": "MLP",
+        "class": MLPModel,
+        "compatible_methods": ["SHAP", "LIME"],
+        "config_upload": False,
+        "use_data_noramlization": False,
     },
 }
 

@@ -4,3 +4,4 @@ from .linear_regression import LinearRegressionModel
 from .xgboost import XGBoostModel
 from .gam import SklearnGAM
 from .gpr import GPRModel
+from .mlp import MLPModel

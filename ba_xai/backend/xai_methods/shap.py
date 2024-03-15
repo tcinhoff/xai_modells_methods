@@ -27,7 +27,7 @@ class SHAP:
         model = pickle.loads(pickled_model)
 
         # Wählen Sie den richtigen Explainer basierend auf dem Modelltyp
-        if selected_model == "GAM":
+        if selected_model == "GAM" or selected_model == "MLP":
             explainer = shap.Explainer(model.predict, test_data)
         else:
             explainer = shap.Explainer(model.model, test_data)
