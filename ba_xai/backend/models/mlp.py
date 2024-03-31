@@ -6,7 +6,8 @@ class MLPModel(BaseModel):
     def __init__(self, train, target_col="yhat", config=None):
         super().__init__(train, target_col)
         self.model = MLPRegressor(
-            hidden_layer_sizes=[190, 133, 68, 75, 65], # Durch Hyperparameteroptimierung ermittelt
+            hidden_layer_sizes=[94, 71], # Durch Hyperparameteroptimierung ermittelt
+            #[190, 133, 68, 75, 65] alternativ, wenn man preprocessing macht
             activation="relu",
             solver="adam",
             alpha=0.0001,

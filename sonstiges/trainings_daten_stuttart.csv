@@ -1,4 +1,4 @@
-date,year,week,hour,dayOfMonth,day_x_hour,lagged_revenue_D_1,lagged_revenue_H_1,holiday_mean_encoded,current_weather_component_1,current_weather_component_2,weather_diff_to_exp_component_1,coronaImpact,yhat
+date,year,week,hour,dayOfMonth,day_x_hour,lagged_revenue_D_1,lagged_revenue_H_1,holiday_mean_encoded,current_weather_component_1,current_weather_component_2,weather_diff_to_exp_component_1,coronaImpact,revenue
 2018-11-16 12:00:00,2018,46,12,16,512,,,,-0.543559089023881,-0.2009759569799378,-0.4044893867186403,1.0,762.6388125343595
 2018-11-16 13:00:00,2018,46,13,16,513,,,,-0.5258456410598383,-0.2250753183008464,-0.3905019056282351,1.0,424.83507421660255
 2018-11-16 14:00:00,2018,46,14,16,514,,,,-0.5049456936771723,-0.2521387139452307,-0.3734329857017254,1.0,343.83099034006125
