@@ -3,6 +3,7 @@ from dash import dcc, html
 from dash.dependencies import Input, Output, State
 import plotly.graph_objs as go
 import pandas as pd
+import numpy as np
 from dash.exceptions import PreventUpdate
 import base64
 import io
@@ -56,7 +57,7 @@ def get_model_performance():
             ),
             dcc.Loading(
                 id="loading-2",
-                type="default",  # Hier können Sie verschiedene Ladeanimationen auswählen: 'graph', 'cube', 'circle', 'dot', oder 'default'
+                type="default",
                 children=[
                     dcc.Graph(
                         id="model-performance-graph",
@@ -64,8 +65,8 @@ def get_model_performance():
                         style={"width": "95%", "height": "400px"},
                     )
                 ],
-                color="#119DFF",  # Farbe der Ladeanimation
-                fullscreen=False,  # Setzen Sie dies auf True, um die Ladeanimation im Vollbildmodus anzuzeigen
+                color="#119DFF",
+                fullscreen=False,
             ),
             html.Div(id="train-model-output"),
             dcc.Download(id="download-config"),
@@ -104,7 +105,7 @@ def download_prediction(n_clicks):
     [
         State("model-selection-radioitems", "value"),
         State("selected-features-store", "data"),
-        State("target-column-dropdown", "value"), 
+        State("target-column-dropdown", "value"),
     ],
 )
 def update_graph(n_clicks, selected_model, selected_features, target_col):
@@ -131,7 +132,7 @@ def update_graph(n_clicks, selected_model, selected_features, target_col):
     test_index = test_data.date
     train_data = train_data.drop(columns=["date"])
     test_data = test_data.drop(columns=["date"])
-    
+
     # reduce to selected features
     if selected_features:
         train_data = train_data[selected_features + [target_col]]
@@ -150,22 +151,23 @@ def update_graph(n_clicks, selected_model, selected_features, target_col):
     else:
         return go.Figure(), "Please select a model."
 
-    predictions_df = pd.DataFrame({"date": test_index, "yhat": predictions, "actual": actual_values.values})
+    predictions_df = pd.DataFrame(
+        {"date": test_index, "yhat": predictions, "actual": actual_values.values}
+    )
     predictions_plot = create_prediction_plot(predictions_df, std_dev)
 
     # Speichern des trainierten Modells und der Vorhersagen
     with open(PATHS["model_path"], "wb") as f:
         pickle.dump(model, f)
 
-    pd.DataFrame({"date": test_index, "yhat": predictions}).to_csv(PATHS["prediction_path"], index=False)
+    pd.DataFrame({"date": test_index, "yhat": predictions}).to_csv(
+        PATHS["prediction_path"], index=False
+    )
     test_data.to_csv(PATHS["processed_test_data_path"], index=False)
     train_data = train_data.drop(columns=[target_col])
     train_data.to_csv(PATHS["processed_train_data_path"], index=False)
 
     return predictions_plot, None
-
-#ToDO Preprocess data
-#TODO Save Data auslagern
 
 
 def create_prediction_plot(predictions_df, std_dev=None):
@@ -176,7 +178,7 @@ def create_prediction_plot(predictions_df, std_dev=None):
         name="Actual",
         line=dict(color="red"),
     )
-    
+
     prediction_trace = go.Scatter(
         x=predictions_df["date"],
         y=predictions_df["yhat"],
@@ -185,10 +187,31 @@ def create_prediction_plot(predictions_df, std_dev=None):
         line=dict(color="blue"),
     )
 
+    y_val = predictions_df["actual"].values
+    y_pred = predictions_df["yhat"].values
+
+    # Entferne Zeilen mit y_val == 0 vor der MAPE-Berechnung
+    nonzero_mask = y_val != 0
+    y_val = y_val[nonzero_mask]
+    y_pred = y_pred[nonzero_mask]
+
+    # Berechne MAPE
+    mape = np.mean(np.abs((y_val - y_pred) / y_val)) * 100
+
     layout = go.Layout(
         title="Model Predictions",
-        xaxis={"title": "Date"},
         yaxis={"title": "Predicted Value"},
+        annotations=[
+            dict(
+                x=0.5,
+                y=-0.25,
+                showarrow=False,
+                text=f"MAPE: {mape:.2f}%",
+                xref="paper",
+                yref="paper",
+                font=dict(size=16),
+            )
+        ],
     )
 
     data = [actual_trace, prediction_trace]
@@ -232,7 +255,7 @@ def get_model_prediction(model, test):
     else:
         # Nur Vorhersagen wurden zurückgegeben, keine Standardabweichungen
         predictions = output
-        std_dev = None  # Standardabweichungen nicht verfügbar
+        std_dev = None
         return model, predictions, std_dev
 
 
