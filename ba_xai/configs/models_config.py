@@ -14,6 +14,7 @@ MODELS = {
         "compatible_methods": ["COEFFICIENTS", "PDP", "SHAP", "LIME"],
         "config_upload": False,
         "use_data_noramlization": True,
+        "can_handle_nan": False,
     },
     "GAM": {
         "label": "GAM",
@@ -21,6 +22,7 @@ MODELS = {
         "compatible_methods": ["SHAP", "LIME"],
         "config_upload": False,
         "use_data_noramlization": False,
+        "can_handle_nan": False,
     },
     "LGBM": {
         "label": "LGBM",
@@ -28,6 +30,7 @@ MODELS = {
         "compatible_methods": ["SHAP", "LIME"],
         "config_upload": True,
         "use_data_noramlization": False,
+        "can_handle_nan": True,
     },
     "XGBoost": {
         "label": "XGBoost",
@@ -35,6 +38,7 @@ MODELS = {
         "compatible_methods": ["SHAP", "LIME"],
         "config_upload": True,
         "use_data_noramlization": False,
+        "can_handle_nan": True,
     },
     "GPR": {
         "label": "GPR",
@@ -42,6 +46,7 @@ MODELS = {
         "compatible_methods": ["SHAP", "LIME"],
         "config_upload": False,
         "use_data_noramlization": True,
+        "can_handle_nan": False,
     },
     "MLP": {
         "label": "MLP",
@@ -49,6 +54,7 @@ MODELS = {
         "compatible_methods": ["SHAP", "LIME"],
         "config_upload": False,
         "use_data_noramlization": False,
+        "can_handle_nan": False,
     },
 }
 

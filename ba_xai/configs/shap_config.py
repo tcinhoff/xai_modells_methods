@@ -16,8 +16,13 @@ SHAP_METHODS = {
         "local": True,
         "function": bar,
     },
-    "SHAP-Global-Bar": {
-        "label": "SHAP Global Bar",
+    "SHAP-Global-Bar-Test": {
+        "label": "SHAP Global Bar for Test Data",
+        "local": False,
+        "function": bar,
+    },
+    "SHAP-Global-Bar-Train": {
+        "label": "SHAP Global Bar for Train Data",
         "local": False,
         "function": bar,
     },

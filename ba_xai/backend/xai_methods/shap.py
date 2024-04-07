@@ -16,22 +16,31 @@ class SHAP:
 
     def create_shap_plot(selected_model, point_index, selected_method):
         test_data = pd.read_csv(PATHS["processed_test_data_path"])
+        train_data = pd.read_csv(PATHS["processed_train_data_path"])
         # Scale test_data if nessessary
         if MODELS[selected_model]["use_data_noramlization"]:
             scaler = pickle.loads(open(PATHS["path_to_scaler"], "rb").read())
             test_data = pd.DataFrame(
                 scaler.transform(test_data), columns=test_data.columns
             )
+            train_data = pd.DataFrame(
+                scaler.transform(train_data), columns=train_data.columns
+            )
 
         pickled_model = open(PATHS["model_path"], "rb").read()
         model = pickle.loads(pickled_model)
 
         # Wählen Sie den richtigen Explainer basierend auf dem Modelltyp
-        if selected_model == "GAM" or selected_model == "MLP":
-            explainer = shap.Explainer(model.predict, test_data)
+        if selected_model in ["GAM", "GPR", "MLP"]:        
+            explainer = shap.Explainer(model.predict, train_data)
         else:
-            explainer = shap.Explainer(model.model, test_data)
-        shap_values = explainer(test_data)
+            explainer = shap.Explainer(model.model, train_data)
+        
+        if selected_method["label"] == "SHAP Global Bar for Train Data":
+            shap_values = explainer(train_data, check_additivity=False)
+        else:
+            shap_values = explainer(test_data)
+
         return SHAP.create_shap_image(shap_values, point_index, selected_method)
 
     def create_shap_image(shap_values, point_index, selected_method):

@@ -133,6 +133,11 @@ def update_graph(n_clicks, selected_model, selected_features, target_col):
     train_data = train_data.drop(columns=["date"])
     test_data = test_data.drop(columns=["date"])
 
+    # remove Rows with NAN values if model isnt able to handle them Model["can_handle_nan"]
+    if not MODELS[selected_model]["can_handle_nan"]:
+        train_data = train_data.dropna()
+        test_data = test_data.dropna()
+
     # reduce to selected features
     if selected_features:
         train_data = train_data[selected_features + [target_col]]
@@ -142,11 +147,11 @@ def update_graph(n_clicks, selected_model, selected_features, target_col):
         model_class = MODELS[selected_model]["class"]
         if model_config is not None and MODELS[selected_model]["config_upload"]:
             model, predictions, std_dev = get_model_prediction(
-                model_class(train_data, target_col, model_config), test_data
+                model_class(train_data, target_col, model_config), test_data, selected_model
             )
         else:
             model, predictions, std_dev = get_model_prediction(
-                model_class(train_data, target_col), test_data
+                model_class(train_data, target_col), test_data, selected_model
             )
     else:
         return go.Figure(), "Please select a model."
@@ -244,16 +249,18 @@ def create_prediction_plot(predictions_df, std_dev=None):
     return {"data": data, "layout": layout}
 
 
-def get_model_prediction(model, test):
+def get_model_prediction(model, test, selected_model):
     model.fit()
-    output = model.predict(test)
-    # Überprüfen, ob die Vorhersage als Tuple mit zwei Elementen (predictions,
-    # std_dev) zurückgegeben wurde
+    if selected_model == "GPR":
+        # Hier kann man return_std=True setzen, um die Standardabweichung zu erhalten
+        output = model.predict(test, return_std=False) 
+    else:
+        output = model.predict(test)
+
     if isinstance(output, tuple) and len(output) == 2:
         predictions, std_dev = output
         return model, predictions, std_dev
     else:
-        # Nur Vorhersagen wurden zurückgegeben, keine Standardabweichungen
         predictions = output
         std_dev = None
         return model, predictions, std_dev

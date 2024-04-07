@@ -19,7 +19,7 @@ def get_feature_selection_modal():
                     dbc.Row(
                         [
                             dbc.Col(
-                                html.Div("SHAP values calculated with LGBM model"),
+                                html.Div("SHAP values calculated with LGBM model for the test data"),
                                 className="text-muted",
                                 style={"fontSize": "0.9em", "marginTop": "10px"},
                             ),
@@ -166,7 +166,8 @@ def train_lgbm_and_calculate_global_shap_values(train_data, test_data):
     model_class = MODELS["LGBM"]["class"]
     model = model_class(train_data, target_col)
     model.fit()
-    explainer = shap.Explainer(model.model, test_data)
+    processed_train_data = train_data.drop(columns=[target_col])
+    explainer = shap.Explainer(model.model, processed_train_data)
     shap_values = explainer(test_data)
     mean_shap_values = np.abs(shap_values.values).mean(axis=0)
 
