@@ -1,9 +1,0 @@
-{
-    "max_depth": 2,
-    "learning_rate": 0.3,
-    "n_estimators": 100,
-    "verbosity": 1,
-    "objective": "reg:squarederror",
-    "booster": "gbtree",
-    "importance_type": "gain"
-}
