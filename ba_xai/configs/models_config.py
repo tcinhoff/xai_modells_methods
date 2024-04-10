@@ -4,7 +4,7 @@ from backend.models import (
     XGBoostModel,
     SklearnGAM,
     GPRModel,
-    MLPModel,    
+    MLPModel,
 )
 
 MODELS = {

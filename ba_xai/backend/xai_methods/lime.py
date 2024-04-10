@@ -33,7 +33,7 @@ class LIME:
         )
 
         return exp.as_html()
-    
+
     def get_lime_Iframe(selected_model, point_index):
         lime_html = LIME.get_line_html(selected_model, point_index)
         return html.Iframe(srcDoc=lime_html, style={"width": "100%", "height": "600px"})

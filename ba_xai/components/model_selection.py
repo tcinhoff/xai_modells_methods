@@ -43,4 +43,3 @@ def update_model_parameters(selected_model):
     if MODELS[selected_model]["config_upload"]:
         return get_model_config_selection()
     return html.Div()
-

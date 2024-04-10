@@ -3,6 +3,7 @@ from sklearn.preprocessing import SplineTransformer
 from sklearn.pipeline import make_pipeline
 from .base_model import BaseModel
 
+
 class SklearnGAM(BaseModel):
     def __init__(self, train, target_col="yhat", config=None):
         super().__init__(train, target_col)

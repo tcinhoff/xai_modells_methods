@@ -12,7 +12,9 @@ def get_xai_methods():
     return html.Div(
         [
             html.H3("XAI Method Selection"),
-            html.Div(id="selected-point", style={"marginTop": "15px", "marginBottom": "15px"}),
+            html.Div(
+                id="selected-point", style={"marginTop": "15px", "marginBottom": "15px"}
+            ),
             dcc.Dropdown(
                 id="xai-method-dropdown",
             ),
@@ -68,7 +70,7 @@ def display_model_evaluation(xai_method, clickData, selected_model):
         Input("xai-method-dropdown", "value"),
     ],
 )
-def display_selected_point(clickData, selected_method):    
+def display_selected_point(clickData, selected_method):
     if selected_method in ["COEFFICIENTS", "PDP"]:
         return "Method is datapoint independent."
 

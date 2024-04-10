@@ -13,13 +13,15 @@ def get_feature_selection_modal():
     feature_selection_modal = dbc.Modal(
         [
             dbc.ModalHeader(dbc.ModalTitle("Select Features")),
-            dbc.ModalBody(id="modal-body"),  # Der Inhalt wird dynamisch gefüllt
+            dbc.ModalBody(id="modal-body"),
             dbc.ModalFooter(
                 [
                     dbc.Row(
                         [
                             dbc.Col(
-                                html.Div("SHAP values calculated with LGBM model for the test data"),
+                                html.Div(
+                                    "SHAP values calculated with LGBM model for the test data"
+                                ),
                                 className="text-muted",
                                 style={"fontSize": "0.9em", "marginTop": "10px"},
                             ),
@@ -36,7 +38,7 @@ def get_feature_selection_modal():
             ),
         ],
         id="feature-selection-modal",
-        size="lg",  # Größe des Modals
+        size="lg",
     )
 
     return html.Div(
@@ -83,7 +85,6 @@ def toggle_modal(
     button_id = ctx.triggered[0]["prop_id"].split(".")[0]
 
     if button_id == "feature-reduction-button":
-        # Verwendung der vorher definierten Funktion zur Berechnung der SHAP-Werte
         feature_importance = train_lgbm_and_calculate_global_shap_values(
             train_data, test_data
         )
@@ -131,9 +132,9 @@ def toggle_modal(
             False,
             no_update,
             selected_features_data,
-        ]  # Modal schließen und Store aktualisieren
+        ]
 
-    return [False, no_update, no_update]  # Fallback, keine Aktion
+    return [False, no_update, no_update]
 
 
 def create_feature_selection_row(feature_name, shap_value, is_selected):
@@ -176,7 +177,6 @@ def train_lgbm_and_calculate_global_shap_values(train_data, test_data):
         {"feature": feature_names, "mean_shap_value": mean_shap_values}
     )
 
-    # Sortieren der Features basierend auf ihrer durchschnittlichen Wichtigkeit
     feature_importance = feature_importance.sort_values(
         by="mean_shap_value", ascending=False
     )

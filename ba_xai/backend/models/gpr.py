@@ -14,10 +14,13 @@ class GPRModel(BaseModel):
             # Kernel-Kombination aus periodischem und Matern-Kernel
             # daily_kernel = ExpSineSquared(length_scale=1.0, periodicity=10)
             # weekly_kernel = ExpSineSquared(length_scale=7.0, periodicity=70)
-            matern_kernel = Matern(length_scale=1.0, length_scale_bounds=(0.1, 10.0), nu=1.5)
-            
+            matern_kernel = Matern(
+                length_scale=1.0, length_scale_bounds=(0.1, 10.0), nu=1.5
+            )
+
             # periodic_kernel_sum = Sum(daily_kernel, weekly_kernel)
             # kernel = Sum(daily_kernel, matern_kernel)
+            # Beste und Schnellste Ergebnisse mit nur dem Matern-Kernel
         self.model = GaussianProcessRegressor(kernel=matern_kernel)
         self.scaler = StandardScaler()
 
@@ -37,7 +40,9 @@ class GPRModel(BaseModel):
             self.scaler.transform(test), columns=test.columns
         )
         if return_std:
-            predictions, std_dev = self.model.predict(test_normalized, return_std=return_std)
+            predictions, std_dev = self.model.predict(
+                test_normalized, return_std=return_std
+            )
             return predictions, std_dev
         else:
             return self.model.predict(test_normalized)

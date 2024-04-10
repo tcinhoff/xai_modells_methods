@@ -116,11 +116,9 @@ def update_graph(n_clicks, selected_model, selected_features, target_col):
     train_data = pd.read_csv(PATHS["train_data_path"])
     test_data = pd.read_csv(PATHS["test_data_path"])
 
-    # Überprüfen, ob sowohl Trainings- als auch Testdaten vorhanden sind
     if train_data.empty or test_data.empty:
         return go.Figure(), "Please upload data."
 
-    # Versuche, die Konfiguration zu parsen, falls vorhanden
     model_config = None
     try:
         with open(PATHS["config_path"], "r") as file:
@@ -133,12 +131,10 @@ def update_graph(n_clicks, selected_model, selected_features, target_col):
     train_data = train_data.drop(columns=["date"])
     test_data = test_data.drop(columns=["date"])
 
-    # remove Rows with NAN values if model isnt able to handle them Model["can_handle_nan"]
     if not MODELS[selected_model]["can_handle_nan"]:
         train_data = train_data.dropna()
         test_data = test_data.dropna()
 
-    # reduce to selected features
     if selected_features:
         train_data = train_data[selected_features + [target_col]]
         test_data = test_data[selected_features]
@@ -147,7 +143,9 @@ def update_graph(n_clicks, selected_model, selected_features, target_col):
         model_class = MODELS[selected_model]["class"]
         if model_config is not None and MODELS[selected_model]["config_upload"]:
             model, predictions, std_dev = get_model_prediction(
-                model_class(train_data, target_col, model_config), test_data, selected_model
+                model_class(train_data, target_col, model_config),
+                test_data,
+                selected_model,
             )
         else:
             model, predictions, std_dev = get_model_prediction(
@@ -200,7 +198,6 @@ def create_prediction_plot(predictions_df, std_dev=None):
     y_val = y_val[nonzero_mask]
     y_pred = y_pred[nonzero_mask]
 
-    # Berechne MAPE
     mape = np.mean(np.abs((y_val - y_pred) / y_val)) * 100
 
     layout = go.Layout(
@@ -253,7 +250,8 @@ def get_model_prediction(model, test, selected_model):
     model.fit()
     if selected_model == "GPR":
         # Hier kann man return_std=True setzen, um die Standardabweichung zu erhalten
-        output = model.predict(test, return_std=False) 
+        # Gegebenenfalls in einem Anschlussprojekt in einen Switch auslagern
+        output = model.predict(test, return_std=False)
     else:
         output = model.predict(test)
 
